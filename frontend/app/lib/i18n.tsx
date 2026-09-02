@@ -24,6 +24,7 @@ const fr: Dict = {
   "nav.dashboard": "Tableau de bord",
   "nav.tags": "Étiquettes",
   "nav.kanban": "Kanban",
+  "nav.recurring": "Tâches récurrentes",
   "settings.title": "Paramètres",
   "settings.language": "Langue",
 
@@ -31,6 +32,30 @@ const fr: Dict = {
   "kanban.subtitle":
     "Glissez-déposez une tâche dans une colonne pour changer son état.",
   "kanban.empty_column": "Déposez une tâche ici",
+
+  "recurring.title": "Tâches récurrentes",
+  "recurring.subtitle":
+    "Une tâche est recréée automatiquement à chaque échéance (au prochain chargement de la liste).",
+  "recurring.every": "Répéter",
+  "recurring.value_label": "Intervalle",
+  "recurring.opt.hour": "Heure(s)",
+  "recurring.opt.day": "Jour(s)",
+  "recurring.opt.week": "Semaine(s)",
+  "recurring.summary.hour": (p) =>
+    `Toutes les ${p.value} heure${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.summary.day": (p) =>
+    `Tous les ${p.value} jour${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.summary.week": (p) =>
+    `Toutes les ${p.value} semaine${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.add": "Créer la tâche récurrente",
+  "recurring.adding": "Création…",
+  "recurring.empty": "Aucune tâche récurrente.",
+  "recurring.next_run": (p) => `Prochaine : ${p.date}`,
+  "recurring.last_run": (p) => `Dernière : ${p.date}`,
+  "recurring.never": "jamais",
+  "recurring.pause": "Mettre en pause",
+  "recurring.resume": "Réactiver",
+  "recurring.paused": "En pause",
 
   "tags.title": "Étiquettes",
   "tags.subtitle": "Créez des étiquettes puis associez-les à vos tâches.",
@@ -99,6 +124,7 @@ const en: Dict = {
   "nav.dashboard": "Dashboard",
   "nav.tags": "Tags",
   "nav.kanban": "Kanban",
+  "nav.recurring": "Recurring tasks",
   "settings.title": "Settings",
   "settings.language": "Language",
 
@@ -106,6 +132,30 @@ const en: Dict = {
   "kanban.subtitle":
     "Drag and drop a task into a column to change its status.",
   "kanban.empty_column": "Drop a task here",
+
+  "recurring.title": "Recurring tasks",
+  "recurring.subtitle":
+    "A task is recreated automatically at each due date (on the next list load).",
+  "recurring.every": "Repeat",
+  "recurring.value_label": "Interval",
+  "recurring.opt.hour": "Hour(s)",
+  "recurring.opt.day": "Day(s)",
+  "recurring.opt.week": "Week(s)",
+  "recurring.summary.hour": (p) =>
+    `Every ${p.value} hour${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.summary.day": (p) =>
+    `Every ${p.value} day${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.summary.week": (p) =>
+    `Every ${p.value} week${Number(p.value) > 1 ? "s" : ""}`,
+  "recurring.add": "Create recurring task",
+  "recurring.adding": "Creating…",
+  "recurring.empty": "No recurring tasks.",
+  "recurring.next_run": (p) => `Next: ${p.date}`,
+  "recurring.last_run": (p) => `Last: ${p.date}`,
+  "recurring.never": "never",
+  "recurring.pause": "Pause",
+  "recurring.resume": "Resume",
+  "recurring.paused": "Paused",
 
   "tags.title": "Tags",
   "tags.subtitle": "Create tags, then attach them to your tasks.",

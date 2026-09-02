@@ -101,6 +101,40 @@ export interface TagCreateInput {
   color?: string;
 }
 
+export type RecurrenceUnit = "hour" | "day" | "week";
+
+export const RECURRENCE_UNITS: RecurrenceUnit[] = ["hour", "day", "week"];
+
+export interface RecurringTask {
+  id: number;
+  title: string;
+  description: string;
+  priority: Priority;
+  unit: RecurrenceUnit;
+  value: number;
+  active: boolean;
+  created_at: string;
+  last_run_at: string | null;
+  next_run_at: string;
+}
+
+export interface RecurringTaskCreateInput {
+  title: string;
+  description?: string;
+  priority?: Priority;
+  unit: RecurrenceUnit;
+  value: number;
+}
+
+export interface RecurringTaskUpdateInput {
+  title?: string;
+  description?: string;
+  priority?: Priority;
+  unit?: RecurrenceUnit;
+  value?: number;
+  active?: boolean;
+}
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
@@ -178,6 +212,36 @@ export const tagApi = {
   remove(id: number): Promise<void> {
     return fetch(`${API_URL}/tags/${id}`, { method: "DELETE" }).then((r) =>
       parse<void>(r),
+    );
+  },
+};
+
+export const recurringApi = {
+  list(): Promise<RecurringTask[]> {
+    return fetch(`${API_URL}/recurring-tasks/`, { cache: "no-store" }).then((r) =>
+      parse<RecurringTask[]>(r),
+    );
+  },
+
+  create(input: RecurringTaskCreateInput): Promise<RecurringTask> {
+    return fetch(`${API_URL}/recurring-tasks/`, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    }).then((r) => parse<RecurringTask>(r));
+  },
+
+  update(id: number, input: RecurringTaskUpdateInput): Promise<RecurringTask> {
+    return fetch(`${API_URL}/recurring-tasks/${id}`, {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    }).then((r) => parse<RecurringTask>(r));
+  },
+
+  remove(id: number): Promise<void> {
+    return fetch(`${API_URL}/recurring-tasks/${id}`, { method: "DELETE" }).then(
+      (r) => parse<void>(r),
     );
   },
 };

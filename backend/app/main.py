@@ -66,6 +66,8 @@ def list_todos(
     db: Session = Depends(get_db),
 ) -> list[models.Todo]:
     """Retourne la liste des tâches (pagination optionnelle via `skip`/`limit`)."""
+    # Génère au passage les tâches récurrentes arrivées à échéance.
+    crud.materialize_due_recurring(db)
     return crud.get_todos(db, skip=skip, limit=limit)
 
 
@@ -157,4 +159,67 @@ def delete_tag(tag_id: int, db: Session = Depends(get_db)) -> None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tag {tag_id} introuvable.",
+        )
+
+
+# --- Endpoints Tâches récurrentes ---------------------------------------------
+
+@app.get(
+    "/recurring-tasks/",
+    response_model=list[schemas.RecurringTaskResponse],
+    tags=["recurring"],
+)
+def list_recurring_tasks(
+    db: Session = Depends(get_db),
+) -> list[models.RecurringTask]:
+    """Liste les gabarits de tâches récurrentes."""
+    crud.materialize_due_recurring(db)
+    return crud.get_recurring_tasks(db)
+
+
+@app.post(
+    "/recurring-tasks/",
+    response_model=schemas.RecurringTaskResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["recurring"],
+)
+def create_recurring_task(
+    payload: schemas.RecurringTaskCreate,
+    db: Session = Depends(get_db),
+) -> models.RecurringTask:
+    """Crée un gabarit récurrent (et sa première tâche immédiatement)."""
+    return crud.create_recurring_task(db, payload)
+
+
+@app.put(
+    "/recurring-tasks/{rec_id}",
+    response_model=schemas.RecurringTaskResponse,
+    tags=["recurring"],
+)
+def update_recurring_task(
+    rec_id: int,
+    payload: schemas.RecurringTaskUpdate,
+    db: Session = Depends(get_db),
+) -> models.RecurringTask:
+    """Met à jour un gabarit (intervalle, priorité, activation…)."""
+    rec = crud.update_recurring_task(db, rec_id, payload)
+    if rec is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tâche récurrente {rec_id} introuvable.",
+        )
+    return rec
+
+
+@app.delete(
+    "/recurring-tasks/{rec_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["recurring"],
+)
+def delete_recurring_task(rec_id: int, db: Session = Depends(get_db)) -> None:
+    """Supprime un gabarit récurrent (les tâches déjà créées sont conservées)."""
+    if not crud.delete_recurring_task(db, rec_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tâche récurrente {rec_id} introuvable.",
         )

@@ -160,7 +160,21 @@ API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
 - Implémenté avec l'API HTML5 Drag & Drop native (aucune dépendance ajoutée).
   Limite : le drag natif ne fonctionne pas sur écran tactile.
 
-## 9. Internationalisation (FR / EN)
+## 9. Tâches récurrentes
+
+- Onglet **Tâches récurrentes** (navbar) : créer un *gabarit* (titre, description,
+  priorité) + un intervalle « toutes les N **heures / jours / semaines** ».
+- Le gabarit n'est pas une tâche : à chaque échéance il crée une vraie `Todo`.
+  - 1re occurrence créée immédiatement à la création du gabarit.
+  - Occurrences suivantes générées lors du prochain `GET /todos/` ou
+    `GET /recurring-tasks/` (matérialisation paresseuse, pas de worker de fond).
+  - Rattrapage borné : 1 seule tâche créée même si plusieurs périodes ont été
+    manquées (`next_run_at` est avancé au prochain créneau futur).
+- Table `recurring_tasks` (`unit`, `value`, `active`, `last_run_at`, `next_run_at`).
+- API : `GET/POST /recurring-tasks/`, `PUT /recurring-tasks/{id}` (pause via
+  `active`, changement d'intervalle), `DELETE /recurring-tasks/{id}`.
+
+## 10. Internationalisation (FR / EN)
 
 - Bascule via l'icône ⚙️ en bas de la navbar → menu **Langue** (🇫🇷 Français / 🇬🇧 English).
 - Choix mémorisé dans `localStorage` (`todo-app.lang`), défaut : français.
@@ -169,7 +183,7 @@ API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
   `{ lang, locale, setLang, t }`). Pour ajouter une chaîne : une entrée dans
   chaque dictionnaire, puis `t("ma.cle")` dans le composant.
 
-## 10. Commandes utiles
+## 11. Commandes utiles
 
 ```bash
 docker compose down             # Arrêter et supprimer les conteneurs
@@ -181,7 +195,7 @@ docker compose build --no-cache # Reconstruire sans cache
 
 ---
 
-## 11. Dépannage
+## 12. Dépannage
 
 | Symptôme                                   | Cause probable / solution                                          |
 |--------------------------------------------|-------------------------------------------------------------------|

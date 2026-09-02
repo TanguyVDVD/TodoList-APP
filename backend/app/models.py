@@ -72,6 +72,43 @@ class Todo(Base):
     )
 
 
+class RecurringTask(Base):
+    """Modèle de tâche régénérée automatiquement à intervalle régulier.
+
+    Ce n'est PAS une tâche : c'est un gabarit qui crée une `Todo` à chaque
+    échéance (`next_run_at`).
+    """
+
+    __tablename__ = "recurring_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
+    priority: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="medium", server_default="medium"
+    )
+
+    # Unité de récurrence : "hour" | "day" | "week".
+    unit: Mapped[str] = mapped_column(String(10), nullable=False)
+    # Valeur : "toutes les <value> <unit>".
+    value: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+
+    active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_run_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    next_run_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
 class Tag(Base):
     """Une étiquette réutilisable, associable à plusieurs tâches."""
 

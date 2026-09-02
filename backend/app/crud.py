@@ -5,6 +5,8 @@ les fonctions reçoivent une `Session` et des schémas Pydantic, et renvoient
 des objets ORM (ou `None` / `bool` selon le cas).
 """
 
+from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
@@ -125,6 +127,97 @@ def delete_todo(db: Session, todo_id: int) -> bool:
     db.delete(todo)
     db.commit()
     return True
+
+
+# --- Tâches récurrentes ------------------------------------------------
+
+def _interval_delta(unit: str, value: int) -> timedelta:
+    if unit == "hour":
+        return timedelta(hours=value)
+    if unit == "week":
+        return timedelta(weeks=value)
+    return timedelta(days=value)  # "day" par défaut
+
+
+def get_recurring_tasks(db: Session) -> list[models.RecurringTask]:
+    stmt = select(models.RecurringTask).order_by(
+        models.RecurringTask.created_at.desc()
+    )
+    return list(db.scalars(stmt).all())
+
+
+def create_recurring_task(
+    db: Session, payload: schemas.RecurringTaskCreate
+) -> models.RecurringTask:
+    """Crée le gabarit et matérialise immédiatement la première occurrence."""
+    now = datetime.now(timezone.utc)
+    rec = models.RecurringTask(**payload.model_dump(), next_run_at=now)
+    db.add(rec)
+    db.commit()
+    materialize_due_recurring(db)  # crée la 1re tâche tout de suite
+    db.refresh(rec)
+    return rec
+
+
+def update_recurring_task(
+    db: Session, rec_id: int, payload: schemas.RecurringTaskUpdate
+) -> models.RecurringTask | None:
+    rec = db.get(models.RecurringTask, rec_id)
+    if rec is None:
+        return None
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(rec, field, value)
+    db.commit()
+    db.refresh(rec)
+    return rec
+
+
+def delete_recurring_task(db: Session, rec_id: int) -> bool:
+    rec = db.get(models.RecurringTask, rec_id)
+    if rec is None:
+        return False
+    db.delete(rec)
+    db.commit()
+    return True
+
+
+def materialize_due_recurring(db: Session) -> int:
+    """Crée une `Todo` pour chaque tâche récurrente active arrivée à échéance.
+
+    Une seule tâche est créée par gabarit même si plusieurs périodes ont été
+    manquées (on avance simplement `next_run_at` au prochain créneau futur).
+    Renvoie le nombre de tâches créées.
+    """
+    now = datetime.now(timezone.utc)
+    due = db.scalars(
+        select(models.RecurringTask).where(
+            models.RecurringTask.active.is_(True),
+            models.RecurringTask.next_run_at <= now,
+        )
+    ).all()
+
+    created = 0
+    for rec in due:
+        delta = _interval_delta(rec.unit, rec.value)
+
+        db.add(
+            models.Todo(
+                title=rec.title,
+                description=rec.description,
+                priority=rec.priority,
+            )
+        )
+        rec.last_run_at = now
+
+        next_run = rec.next_run_at
+        while next_run <= now:
+            next_run = next_run + delta
+        rec.next_run_at = next_run
+        created += 1
+
+    if created:
+        db.commit()
+    return created
 
 
 # --- Statistiques -------------------------------------------------------

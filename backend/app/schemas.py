@@ -10,6 +10,9 @@ HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
 # Niveaux de priorité d'une tâche (du plus faible au plus fort).
 Priority = Literal["low", "medium", "high", "urgent"]
 
+# Unité de récurrence pour une tâche récurrente.
+RecurrenceUnit = Literal["hour", "day", "week"]
+
 
 # --- Tags -------------------------------------------------------------------
 
@@ -68,6 +71,39 @@ class TodoUpdate(BaseModel):
     not_done: bool | None = None
     priority: Priority | None = None
     tag_ids: list[int] | None = None
+
+
+# --- Tâches récurrentes --------------------------------------------------
+
+class RecurringTaskBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str = Field(default="", max_length=2000)
+    priority: Priority = "medium"
+    unit: RecurrenceUnit
+    value: int = Field(default=1, ge=1, le=365, description="Toutes les <value> <unit>")
+
+
+class RecurringTaskCreate(RecurringTaskBase):
+    pass
+
+
+class RecurringTaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=2000)
+    priority: Priority | None = None
+    unit: RecurrenceUnit | None = None
+    value: int | None = Field(default=None, ge=1, le=365)
+    active: bool | None = None
+
+
+class RecurringTaskResponse(RecurringTaskBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    active: bool
+    created_at: datetime
+    last_run_at: datetime | None
+    next_run_at: datetime
 
 
 # --- Statistiques ----------------------------------------------------------

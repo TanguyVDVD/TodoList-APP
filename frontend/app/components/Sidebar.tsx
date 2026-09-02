@@ -66,6 +66,21 @@ function TagIcon() {
   );
 }
 
+/** Icône horloge fléchée (récurrence). */
+function RepeatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <path
+        d="M4 9a8 8 0 0 1 13.6-3.6L20 8M20 4v4h-4M20 15a8 8 0 0 1-13.6 3.6L4 16M4 20v-4h4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Icône engrenage (paramètres). */
 function GearIcon() {
   return (
@@ -100,6 +115,7 @@ export default function Sidebar() {
   const links = [
     { href: "/", label: t("nav.home"), Icon: HomeIcon },
     { href: "/kanban", label: t("nav.kanban"), Icon: KanbanIcon },
+    { href: "/recurring", label: t("nav.recurring"), Icon: RepeatIcon },
     { href: "/tags", label: t("nav.tags"), Icon: TagIcon },
     { href: "/dashboard", label: t("nav.dashboard"), Icon: ChartIcon },
   ];
