@@ -25,6 +25,26 @@ export function todoStatus(todo: Todo): TodoStatus {
   return "pending";
 }
 
+/** Libellé + couleur associés à chaque état (réutilisés partout : badges, graphes). */
+export const STATUS_META: Record<TodoStatus, { label: string; color: string }> = {
+  pending: { label: "En cours", color: "#64748b" }, // slate-500
+  done: { label: "Terminée", color: "#16a34a" }, // green-600
+  failed: { label: "Non réalisée", color: "#dc2626" }, // red-600
+};
+
+/** Une entrée par jour renvoyée par GET /todos/stats. */
+export interface DailyStat {
+  date: string; // "YYYY-MM-DD"
+  pending: number;
+  done: number;
+  failed: number;
+}
+
+export interface TodoStatsResponse {
+  totals: Record<TodoStatus, number>;
+  daily: DailyStat[];
+}
+
 export interface TodoCreateInput {
   title: string;
   description?: string;
@@ -86,6 +106,12 @@ export const todoApi = {
   remove(id: number): Promise<void> {
     return fetch(`${API_URL}/todos/${id}`, { method: "DELETE" }).then((r) =>
       parse<void>(r),
+    );
+  },
+
+  stats(): Promise<TodoStatsResponse> {
+    return fetch(`${API_URL}/todos/stats`, { cache: "no-store" }).then((r) =>
+      parse<TodoStatsResponse>(r),
     );
   },
 };
