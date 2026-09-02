@@ -1,9 +1,10 @@
-"""Opérations CRUD sur les modèles `Todo` et `Tag`.
+"""Opérations CRUD.
 
-Cette couche isole la logique d'accès aux données des routes HTTP :
-les fonctions reçoivent une `Session` et des schémas Pydantic, et renvoient
-des objets ORM (ou `None` / `bool` selon le cas).
+Toutes les fonctions de ressources sont **scopées par `user_id`** : un
+utilisateur ne peut lire / modifier / supprimer que ses propres données.
 """
+
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
@@ -17,30 +18,62 @@ _TAG_PALETTE = [
 ]
 
 
-# --- Tags -----------------------------------------------------------------
+# --- Utilisateurs -------------------------------------------------------
 
-def get_tags(db: Session) -> list[models.Tag]:
-    """Liste tous les tags, triés par nom."""
-    return list(db.scalars(select(models.Tag).order_by(models.Tag.name)).all())
-
-
-def get_tag_by_name(db: Session, name: str) -> models.Tag | None:
-    return db.scalar(select(models.Tag).where(models.Tag.name == name))
+def get_user_by_email(db: Session, email: str) -> models.User | None:
+    return db.scalar(select(models.User).where(models.User.email == email))
 
 
-def create_tag(db: Session, payload: schemas.TagCreate) -> models.Tag:
-    """Crée un tag. La couleur est attribuée automatiquement si absente."""
-    color = payload.color or _TAG_PALETTE[db.scalar(select(func.count(models.Tag.id))) % len(_TAG_PALETTE)]
-    tag = models.Tag(name=payload.name, color=color)
+def create_user(
+    db: Session, *, email: str, name: str, hashed_password: str
+) -> models.User:
+    user = models.User(email=email, name=name, hashed_password=hashed_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+# --- Tags --------------------------------------------------------------
+
+def get_tags(db: Session, user_id: int) -> list[models.Tag]:
+    stmt = (
+        select(models.Tag)
+        .where(models.Tag.user_id == user_id)
+        .order_by(models.Tag.name)
+    )
+    return list(db.scalars(stmt).all())
+
+
+def get_tag_by_name(db: Session, user_id: int, name: str) -> models.Tag | None:
+    return db.scalar(
+        select(models.Tag).where(
+            models.Tag.user_id == user_id, models.Tag.name == name
+        )
+    )
+
+
+def create_tag(
+    db: Session, user_id: int, payload: schemas.TagCreate
+) -> models.Tag:
+    """Crée un tag pour l'utilisateur. Couleur auto si absente."""
+    count = db.scalar(
+        select(func.count(models.Tag.id)).where(models.Tag.user_id == user_id)
+    )
+    color = payload.color or _TAG_PALETTE[count % len(_TAG_PALETTE)]
+    tag = models.Tag(user_id=user_id, name=payload.name, color=color)
     db.add(tag)
     db.commit()
     db.refresh(tag)
     return tag
 
 
-def delete_tag(db: Session, tag_id: int) -> bool:
-    """Supprime un tag (et ses associations). `False` si introuvable."""
-    tag = db.get(models.Tag, tag_id)
+def delete_tag(db: Session, user_id: int, tag_id: int) -> bool:
+    tag = db.scalar(
+        select(models.Tag).where(
+            models.Tag.id == tag_id, models.Tag.user_id == user_id
+        )
+    )
     if tag is None:
         return False
     db.delete(tag)
@@ -48,20 +81,26 @@ def delete_tag(db: Session, tag_id: int) -> bool:
     return True
 
 
-def _resolve_tags(db: Session, tag_ids: list[int]) -> list[models.Tag]:
-    """Renvoie les objets Tag correspondant aux ids fournis (ignore les inconnus)."""
+def _resolve_tags(
+    db: Session, user_id: int, tag_ids: list[int]
+) -> list[models.Tag]:
+    """Tags de l'utilisateur correspondant aux ids (ignore inconnus / autrui)."""
     if not tag_ids:
         return []
-    stmt = select(models.Tag).where(models.Tag.id.in_(set(tag_ids)))
+    stmt = select(models.Tag).where(
+        models.Tag.user_id == user_id, models.Tag.id.in_(set(tag_ids))
+    )
     return list(db.scalars(stmt).all())
 
 
-# --- Todos ----------------------------------------------------------------
+# --- Todos -----------------------------------------------------------
 
-def get_todos(db: Session, skip: int = 0, limit: int = 100) -> list[models.Todo]:
-    """Liste les tâches, les plus récentes d'abord."""
+def get_todos(
+    db: Session, user_id: int, skip: int = 0, limit: int = 100
+) -> list[models.Todo]:
     stmt = (
         select(models.Todo)
+        .where(models.Todo.user_id == user_id)
         .order_by(models.Todo.created_at.desc(), models.Todo.id.desc())
         .offset(skip)
         .limit(limit)
@@ -69,17 +108,23 @@ def get_todos(db: Session, skip: int = 0, limit: int = 100) -> list[models.Todo]
     return list(db.scalars(stmt).all())
 
 
-def get_todo(db: Session, todo_id: int) -> models.Todo | None:
-    """Récupère une tâche par son id, ou `None` si elle n'existe pas."""
-    return db.get(models.Todo, todo_id)
+def get_todo(db: Session, user_id: int, todo_id: int) -> models.Todo | None:
+    return db.scalar(
+        select(models.Todo).where(
+            models.Todo.id == todo_id, models.Todo.user_id == user_id
+        )
+    )
 
 
-def create_todo(db: Session, payload: schemas.TodoCreate) -> models.Todo:
-    """Crée une nouvelle tâche, avec ses tags éventuels."""
+def create_todo(
+    db: Session, user_id: int, payload: schemas.TodoCreate
+) -> models.Todo:
     todo = models.Todo(
+        user_id=user_id,
         title=payload.title,
         description=payload.description,
-        tags=_resolve_tags(db, payload.tag_ids),
+        priority=payload.priority,
+        tags=_resolve_tags(db, user_id, payload.tag_ids),
     )
     db.add(todo)
     db.commit()
@@ -88,45 +133,147 @@ def create_todo(db: Session, payload: schemas.TodoCreate) -> models.Todo:
 
 
 def update_todo(
-    db: Session, todo_id: int, payload: schemas.TodoUpdate
+    db: Session, user_id: int, todo_id: int, payload: schemas.TodoUpdate
 ) -> models.Todo | None:
-    """Met à jour partiellement une tâche. Renvoie `None` si introuvable."""
-    todo = get_todo(db, todo_id)
+    todo = get_todo(db, user_id, todo_id)
     if todo is None:
         return None
 
-    # `exclude_unset=True` : on ne touche qu'aux champs explicitement envoyés.
     data = payload.model_dump(exclude_unset=True, exclude={"tag_ids"})
     for field, value in data.items():
         setattr(todo, field, value)
 
-    # Cohérence : une tâche ne peut pas être à la fois "terminée" et "non réalisée".
+    # Cohérence : une tâche ne peut être à la fois "terminée" et "non réalisée".
     if data.get("completed"):
         todo.not_done = False
     if data.get("not_done"):
         todo.completed = False
 
-    # `tag_ids` fourni -> remplace l'ensemble des tags de la tâche.
     if payload.tag_ids is not None:
-        todo.tags = _resolve_tags(db, payload.tag_ids)
+        todo.tags = _resolve_tags(db, user_id, payload.tag_ids)
 
     db.commit()
     db.refresh(todo)
     return todo
 
 
-def delete_todo(db: Session, todo_id: int) -> bool:
-    """Supprime une tâche. Renvoie `False` si elle n'existait pas."""
-    todo = get_todo(db, todo_id)
+def delete_todo(db: Session, user_id: int, todo_id: int) -> bool:
+    todo = get_todo(db, user_id, todo_id)
     if todo is None:
         return False
-
     db.delete(todo)
     db.commit()
     return True
 
 
-# --- Statistiques -------------------------------------------------------
+# --- Tâches récurrentes --------------------------------------------
+
+def _interval_delta(unit: str, value: int) -> timedelta:
+    if unit == "hour":
+        return timedelta(hours=value)
+    if unit == "week":
+        return timedelta(weeks=value)
+    return timedelta(days=value)  # "day" par défaut
+
+
+def get_recurring_tasks(db: Session, user_id: int) -> list[models.RecurringTask]:
+    stmt = (
+        select(models.RecurringTask)
+        .where(models.RecurringTask.user_id == user_id)
+        .order_by(models.RecurringTask.created_at.desc())
+    )
+    return list(db.scalars(stmt).all())
+
+
+def get_recurring_task(
+    db: Session, user_id: int, rec_id: int
+) -> models.RecurringTask | None:
+    return db.scalar(
+        select(models.RecurringTask).where(
+            models.RecurringTask.id == rec_id,
+            models.RecurringTask.user_id == user_id,
+        )
+    )
+
+
+def create_recurring_task(
+    db: Session, user_id: int, payload: schemas.RecurringTaskCreate
+) -> models.RecurringTask:
+    """Crée le gabarit et matérialise immédiatement la première occurrence."""
+    now = datetime.now(timezone.utc)
+    rec = models.RecurringTask(
+        user_id=user_id, **payload.model_dump(), next_run_at=now
+    )
+    db.add(rec)
+    db.commit()
+    materialize_due_recurring(db, user_id)
+    db.refresh(rec)
+    return rec
+
+
+def update_recurring_task(
+    db: Session, user_id: int, rec_id: int, payload: schemas.RecurringTaskUpdate
+) -> models.RecurringTask | None:
+    rec = get_recurring_task(db, user_id, rec_id)
+    if rec is None:
+        return None
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(rec, field, value)
+    db.commit()
+    db.refresh(rec)
+    return rec
+
+
+def delete_recurring_task(db: Session, user_id: int, rec_id: int) -> bool:
+    rec = get_recurring_task(db, user_id, rec_id)
+    if rec is None:
+        return False
+    db.delete(rec)
+    db.commit()
+    return True
+
+
+def materialize_due_recurring(db: Session, user_id: int) -> int:
+    """Crée une `Todo` par gabarit actif de l'utilisateur arrivé à échéance.
+
+    Une seule tâche est créée par gabarit même si plusieurs périodes ont été
+    manquées (`next_run_at` est avancé au prochain créneau futur).
+    """
+    now = datetime.now(timezone.utc)
+    due = db.scalars(
+        select(models.RecurringTask).where(
+            models.RecurringTask.user_id == user_id,
+            models.RecurringTask.active.is_(True),
+            models.RecurringTask.next_run_at <= now,
+        )
+    ).all()
+
+    created = 0
+    for rec in due:
+        delta = _interval_delta(rec.unit, rec.value)
+
+        db.add(
+            models.Todo(
+                user_id=user_id,
+                title=rec.title,
+                description=rec.description,
+                priority=rec.priority,
+            )
+        )
+        rec.last_run_at = now
+
+        next_run = rec.next_run_at
+        while next_run <= now:
+            next_run = next_run + delta
+        rec.next_run_at = next_run
+        created += 1
+
+    if created:
+        db.commit()
+    return created
+
+
+# --- Statistiques ---------------------------------------------------
 
 def _status_expr():
     """Expression SQL renvoyant l'état textuel d'une tâche."""
@@ -137,13 +284,8 @@ def _status_expr():
     )
 
 
-def get_stats(db: Session) -> dict:
-    """Agrège les données du tableau de bord.
-
-    - `totals` : total par état
-    - `daily`  : une entrée par jour de création, triée par date croissante
-    - `tags`   : nombre de tâches par tag
-    """
+def get_stats(db: Session, user_id: int) -> dict:
+    """Agrège les données du tableau de bord pour un utilisateur."""
     day_expr = func.date(models.Todo.created_at)
 
     stmt = (
@@ -152,6 +294,7 @@ def get_stats(db: Session) -> dict:
             _status_expr().label("status"),
             func.count(models.Todo.id).label("count"),
         )
+        .where(models.Todo.user_id == user_id)
         .group_by(day_expr, _status_expr())
         .order_by(day_expr)
     )
@@ -169,7 +312,7 @@ def get_stats(db: Session) -> dict:
         {"date": date_key, **counts} for date_key, counts in sorted(per_day.items())
     ]
 
-    # Répartition par tag (inclut les tags à 0 tâche via un LEFT JOIN).
+    # Répartition par tag de l'utilisateur (inclut les tags à 0 tâche).
     tag_stmt = (
         select(
             models.Tag.id,
@@ -179,6 +322,7 @@ def get_stats(db: Session) -> dict:
         )
         .select_from(models.Tag)
         .outerjoin(models.todo_tags, models.todo_tags.c.tag_id == models.Tag.id)
+        .where(models.Tag.user_id == user_id)
         .group_by(models.Tag.id)
         .order_by(models.Tag.name)
     )

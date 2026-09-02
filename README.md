@@ -6,6 +6,25 @@ backend et le frontend.
 
 ---
 
+## 0. Authentification (JWT)
+
+- **Au lancement**, l'app affiche un écran **Connexion / Inscription**.
+  - Inscription : email + mot de passe + nom (aucune contrainte de format/robustesse).
+  - Connexion : email + mot de passe.
+- Mots de passe hachés avec **bcrypt** ; jeton **JWT HS256** (`sub` = id user,
+  exp = 24 h) renvoyé au login/register, stocké côté front dans `localStorage`
+  et envoyé en `Authorization: Bearer …` sur chaque requête.
+- **Isolation totale** : chaque endpoint ressource dépend de `get_current_user`
+  et toutes les requêtes SQL filtrent sur `user_id`. Un utilisateur ne voit /
+  modifie que ses tâches, étiquettes et récurrences. Accès sans jeton → 401 ;
+  accès à une ressource d'autrui → 404.
+- Config : `JWT_SECRET`, `ACCESS_TOKEN_EXPIRE_MINUTES` dans `.env`
+  (⚠ changer `JWT_SECRET` en production).
+- Tables : `users` ; colonne `user_id` (FK `users`, `ON DELETE CASCADE`) sur
+  `todos` / `tags` / `recurring_tasks`. Le nom d'une étiquette est unique
+  **par utilisateur**. Les données créées avant l'auth (`user_id NULL`) sont
+  simplement invisibles ; `docker compose down -v` pour repartir de zéro.
+
 ## 1. Arborescence du projet
 
 ```
@@ -133,18 +152,48 @@ curl -X DELETE http://localhost:8000/todos/1
 
 ---
 
-## 7. Tags
+## 7. Priorité et étiquettes (deux concepts distincts)
 
-- Onglet **Tags** (navbar) : créer / supprimer des tags (nom unique, couleur
-  auto depuis une palette).
-- Association many-to-many `todos <-> tags` (table `todo_tags`).
-  - À la création d'une tâche : cases à cocher dans le formulaire.
-  - Sur une tâche existante : bouton « Modifier les tags » (popover).
-- API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
-  `tag_ids` (POST) et le remplacent quand fourni (PUT).
-- Dashboard : camembert **Répartition par tag** (`GET /todos/stats` -> champ `tags`).
+**Priorité** — une seule valeur par tâche : `low` | `medium` | `high` | `urgent`
+(colonne `todos.priority`, défaut `medium`). Choisie à la création (pastilles) et
+modifiable sur chaque tâche (menu déroulant coloré vert → rouge).
 
-## 8. Internationalisation (FR / EN)
+**Étiquettes (tags)** — relation *many-to-many* : 0..N étiquettes par tâche.
+- Onglet **Étiquettes** (navbar, « Tags » en anglais) : créer / supprimer
+  (nom unique, couleur auto depuis une palette).
+- Table d'association `todo_tags`.
+  - À la création : cases à cocher dans le formulaire.
+  - Sur une tâche existante : bouton « Modifier les étiquettes » (popover).
+- Dashboard : camembert **Répartition par étiquette**
+  (`GET /todos/stats` → champ `tags`).
+
+API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
+`priority` et `tag_ids` (POST + PUT, `tag_ids` remplace l'ensemble).
+
+## 8. Kanban
+
+- Onglet **Kanban** (navbar) : 3 colonnes = les 3 états (En cours / Terminée /
+  Non réalisée), chaque tâche dans sa colonne.
+- **Glisser-déposer** une carte vers une autre colonne → `PUT /todos/{id}` avec
+  le patch d'état correspondant (mise à jour optimiste + resynchro si échec).
+- Implémenté avec l'API HTML5 Drag & Drop native (aucune dépendance ajoutée).
+  Limite : le drag natif ne fonctionne pas sur écran tactile.
+
+## 9. Tâches récurrentes
+
+- Onglet **Tâches récurrentes** (navbar) : créer un *gabarit* (titre, description,
+  priorité) + un intervalle « toutes les N **heures / jours / semaines** ».
+- Le gabarit n'est pas une tâche : à chaque échéance il crée une vraie `Todo`.
+  - 1re occurrence créée immédiatement à la création du gabarit.
+  - Occurrences suivantes générées lors du prochain `GET /todos/` ou
+    `GET /recurring-tasks/` (matérialisation paresseuse, pas de worker de fond).
+  - Rattrapage borné : 1 seule tâche créée même si plusieurs périodes ont été
+    manquées (`next_run_at` est avancé au prochain créneau futur).
+- Table `recurring_tasks` (`unit`, `value`, `active`, `last_run_at`, `next_run_at`).
+- API : `GET/POST /recurring-tasks/`, `PUT /recurring-tasks/{id}` (pause via
+  `active`, changement d'intervalle), `DELETE /recurring-tasks/{id}`.
+
+## 10. Internationalisation (FR / EN)
 
 - Bascule via l'icône ⚙️ en bas de la navbar → menu **Langue** (🇫🇷 Français / 🇬🇧 English).
 - Choix mémorisé dans `localStorage` (`todo-app.lang`), défaut : français.
@@ -153,7 +202,7 @@ curl -X DELETE http://localhost:8000/todos/1
   `{ lang, locale, setLang, t }`). Pour ajouter une chaîne : une entrée dans
   chaque dictionnaire, puis `t("ma.cle")` dans le composant.
 
-## 9. Commandes utiles
+## 11. Commandes utiles
 
 ```bash
 docker compose down             # Arrêter et supprimer les conteneurs
@@ -165,7 +214,7 @@ docker compose build --no-cache # Reconstruire sans cache
 
 ---
 
-## 10. Dépannage
+## 12. Dépannage
 
 | Symptôme                                   | Cause probable / solution                                          |
 |--------------------------------------------|-------------------------------------------------------------------|

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../lib/auth";
 import { useI18n, type Lang } from "../lib/i18n";
 
 /** Icône maison (page d'accueil). */
@@ -35,6 +36,21 @@ function ChartIcon() {
   );
 }
 
+/** Icône colonnes (kanban). */
+function KanbanIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <path
+        d="M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Icône étiquette (tags). */
 function TagIcon() {
   return (
@@ -47,6 +63,21 @@ function TagIcon() {
         strokeLinejoin="round"
       />
       <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Icône horloge fléchée (récurrence). */
+function RepeatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <path
+        d="M4 9a8 8 0 0 1 13.6-3.6L20 8M20 4v4h-4M20 15a8 8 0 0 1-13.6 3.6L4 16M4 20v-4h4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -79,11 +110,14 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { t, lang, setLang } = useI18n();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   const links = [
     { href: "/", label: t("nav.home"), Icon: HomeIcon },
+    { href: "/kanban", label: t("nav.kanban"), Icon: KanbanIcon },
+    { href: "/recurring", label: t("nav.recurring"), Icon: RepeatIcon },
     { href: "/tags", label: t("nav.tags"), Icon: TagIcon },
     { href: "/dashboard", label: t("nav.dashboard"), Icon: ChartIcon },
   ];
@@ -134,8 +168,17 @@ export default function Sidebar() {
       {/* Pousse les paramètres tout en bas de la navbar. */}
       <div ref={settingsRef} className="relative mt-auto pt-3">
         {menuOpen && (
-          <div className="absolute bottom-full left-0 mb-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-            <p className="px-2 py-1 text-xs font-medium text-slate-400">
+          <div className="absolute bottom-full left-0 mb-2 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+            {user && (
+              <div className="border-b border-slate-100 px-2 py-1.5">
+                <p className="truncate text-sm font-medium text-slate-800">
+                  {user.name}
+                </p>
+                <p className="truncate text-xs text-slate-400">{user.email}</p>
+              </div>
+            )}
+
+            <p className="px-2 pt-1.5 text-xs font-medium text-slate-400">
               {t("settings.language")}
             </p>
             {LANGS.map(({ code, flag, label }) => (
@@ -156,6 +199,17 @@ export default function Sidebar() {
                 <span>{label}</span>
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                logout();
+              }}
+              className="mt-1 flex w-full items-center gap-2 rounded-md border-t border-slate-100 px-2 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+            >
+              {t("auth.logout")}
+            </button>
           </div>
         )}
 

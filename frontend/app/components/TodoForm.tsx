@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { Tag, TodoCreateInput } from "../lib/api";
+import {
+  PRIORITY_COLOR,
+  PRIORITY_ORDER,
+  type Priority,
+  type Tag,
+  type TodoCreateInput,
+} from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 interface TodoFormProps {
@@ -16,6 +22,7 @@ export default function TodoForm({ tags, onCreate }: TodoFormProps) {
   const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<Priority>("medium");
   const [tagIds, setTagIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +47,12 @@ export default function TodoForm({ tags, onCreate }: TodoFormProps) {
       await onCreate({
         title: cleanTitle,
         description: description.trim(),
+        priority,
         tag_ids: tagIds,
       });
       setTitle("");
       setDescription("");
+      setPriority("medium");
       setTagIds([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("form.error_unknown"));
@@ -73,6 +82,37 @@ export default function TodoForm({ tags, onCreate }: TodoFormProps) {
         maxLength={2000}
         className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium text-slate-500">
+          {t("priority.label")}
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {PRIORITY_ORDER.map((level) => {
+            const on = priority === level;
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setPriority(level)}
+                aria-pressed={on}
+                className="rounded-full border px-2.5 py-0.5 text-xs font-medium transition"
+                style={
+                  on
+                    ? {
+                        backgroundColor: `${PRIORITY_COLOR[level]}1a`,
+                        color: PRIORITY_COLOR[level],
+                        borderColor: `${PRIORITY_COLOR[level]}80`,
+                      }
+                    : { borderColor: "#cbd5e1", color: "#64748b" }
+                }
+              >
+                {t(`priority.${level}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {tags.length > 0 && (
         <div className="flex flex-col gap-1.5">
