@@ -14,6 +14,35 @@ Priority = Literal["low", "medium", "high", "urgent"]
 RecurrenceUnit = Literal["hour", "day", "week"]
 
 
+# --- Authentification -----------------------------------------------------
+
+class UserRegister(BaseModel):
+    """Inscription : email + mot de passe + nom (aucune contrainte de format)."""
+
+    email: str = Field(..., min_length=1, max_length=255)
+    password: str = Field(..., min_length=1, max_length=128)
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class UserLogin(BaseModel):
+    email: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    name: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
 # --- Tags -------------------------------------------------------------------
 
 class TagBase(BaseModel):

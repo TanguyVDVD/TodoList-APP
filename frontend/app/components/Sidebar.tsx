@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../lib/auth";
 import { useI18n, type Lang } from "../lib/i18n";
 
 /** Icône maison (page d'accueil). */
@@ -109,6 +110,7 @@ const LANGS: { code: Lang; flag: string; label: string }[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { t, lang, setLang } = useI18n();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -166,8 +168,17 @@ export default function Sidebar() {
       {/* Pousse les paramètres tout en bas de la navbar. */}
       <div ref={settingsRef} className="relative mt-auto pt-3">
         {menuOpen && (
-          <div className="absolute bottom-full left-0 mb-2 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-            <p className="px-2 py-1 text-xs font-medium text-slate-400">
+          <div className="absolute bottom-full left-0 mb-2 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+            {user && (
+              <div className="border-b border-slate-100 px-2 py-1.5">
+                <p className="truncate text-sm font-medium text-slate-800">
+                  {user.name}
+                </p>
+                <p className="truncate text-xs text-slate-400">{user.email}</p>
+              </div>
+            )}
+
+            <p className="px-2 pt-1.5 text-xs font-medium text-slate-400">
               {t("settings.language")}
             </p>
             {LANGS.map(({ code, flag, label }) => (
@@ -188,6 +199,17 @@ export default function Sidebar() {
                 <span>{label}</span>
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                logout();
+              }}
+              className="mt-1 flex w-full items-center gap-2 rounded-md border-t border-slate-100 px-2 py-1.5 text-sm text-red-600 transition hover:bg-red-50"
+            >
+              {t("auth.logout")}
+            </button>
           </div>
         )}
 

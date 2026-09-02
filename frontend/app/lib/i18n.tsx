@@ -28,6 +28,21 @@ const fr: Dict = {
   "settings.title": "Paramètres",
   "settings.language": "Langue",
 
+  "auth.app_loading": "Chargement…",
+  "auth.login_title": "Connexion",
+  "auth.register_title": "Créer un compte",
+  "auth.subtitle": "Accédez à vos tâches, étiquettes et récurrences.",
+  "auth.email": "Email",
+  "auth.password": "Mot de passe",
+  "auth.name": "Nom",
+  "auth.login_cta": "Se connecter",
+  "auth.register_cta": "S'inscrire",
+  "auth.submitting": "…",
+  "auth.to_register": "Pas de compte ? Créer un compte",
+  "auth.to_login": "Déjà un compte ? Se connecter",
+  "auth.required": "Tous les champs sont obligatoires.",
+  "auth.logout": "Se déconnecter",
+
   "kanban.title": "Kanban",
   "kanban.subtitle":
     "Glissez-déposez une tâche dans une colonne pour changer son état.",
@@ -127,6 +142,21 @@ const en: Dict = {
   "nav.recurring": "Recurring tasks",
   "settings.title": "Settings",
   "settings.language": "Language",
+
+  "auth.app_loading": "Loading…",
+  "auth.login_title": "Sign in",
+  "auth.register_title": "Create an account",
+  "auth.subtitle": "Access your tasks, tags and recurring tasks.",
+  "auth.email": "Email",
+  "auth.password": "Password",
+  "auth.name": "Name",
+  "auth.login_cta": "Sign in",
+  "auth.register_cta": "Sign up",
+  "auth.submitting": "…",
+  "auth.to_register": "No account? Create one",
+  "auth.to_login": "Already have an account? Sign in",
+  "auth.required": "All fields are required.",
+  "auth.logout": "Sign out",
 
   "kanban.title": "Kanban",
   "kanban.subtitle":

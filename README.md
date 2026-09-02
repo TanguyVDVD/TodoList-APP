@@ -6,6 +6,25 @@ backend et le frontend.
 
 ---
 
+## 0. Authentification (JWT)
+
+- **Au lancement**, l'app affiche un écran **Connexion / Inscription**.
+  - Inscription : email + mot de passe + nom (aucune contrainte de format/robustesse).
+  - Connexion : email + mot de passe.
+- Mots de passe hachés avec **bcrypt** ; jeton **JWT HS256** (`sub` = id user,
+  exp = 24 h) renvoyé au login/register, stocké côté front dans `localStorage`
+  et envoyé en `Authorization: Bearer …` sur chaque requête.
+- **Isolation totale** : chaque endpoint ressource dépend de `get_current_user`
+  et toutes les requêtes SQL filtrent sur `user_id`. Un utilisateur ne voit /
+  modifie que ses tâches, étiquettes et récurrences. Accès sans jeton → 401 ;
+  accès à une ressource d'autrui → 404.
+- Config : `JWT_SECRET`, `ACCESS_TOKEN_EXPIRE_MINUTES` dans `.env`
+  (⚠ changer `JWT_SECRET` en production).
+- Tables : `users` ; colonne `user_id` (FK `users`, `ON DELETE CASCADE`) sur
+  `todos` / `tags` / `recurring_tasks`. Le nom d'une étiquette est unique
+  **par utilisateur**. Les données créées avant l'auth (`user_id NULL`) sont
+  simplement invisibles ; `docker compose down -v` pour repartir de zéro.
+
 ## 1. Arborescence du projet
 
 ```

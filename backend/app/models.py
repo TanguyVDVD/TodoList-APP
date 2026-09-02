@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -30,12 +31,34 @@ todo_tags = Table(
 )
 
 
+class User(Base):
+    """Compte utilisateur. Propriétaire de ses tâches, tags et récurrences."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Todo(Base):
     """Une tâche de la todo list."""
 
     __tablename__ = "todos"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # Propriétaire. Nullable pour tolérer d'anciennes lignes créées avant l'auth
+    # (elles deviennent invisibles car les requêtes filtrent sur user_id).
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -83,6 +106,10 @@ class RecurringTask(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
     priority: Mapped[str] = mapped_column(
@@ -110,13 +137,19 @@ class RecurringTask(Base):
 
 
 class Tag(Base):
-    """Une étiquette réutilisable, associable à plusieurs tâches."""
+    """Une étiquette réutilisable, associable à plusieurs tâches d'un utilisateur."""
 
     __tablename__ = "tags"
+    # Le nom d'un tag est unique PAR utilisateur (pas globalement).
+    __table_args__ = (UniqueConstraint("user_id", "name", name="uq_tags_user_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+
+    name: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Couleur hex (#rrggbb) utilisée pour les puces et le graphe du dashboard.
     color: Mapped[str] = mapped_column(String(9), nullable=False, server_default="#64748b")
