@@ -1,0 +1,65 @@
+# =============================================================================
+# Orchestration des 3 services : db (PostgreSQL) + backend (FastAPI) + frontend
+# Toutes les variables proviennent du fichier .env (voir .env.example).
+# =============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: todo_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432" # exposé pour pouvoir se connecter avec un client SQL local
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # persistance des données
+    healthcheck:
+      # Le backend n'attendra que lorsque cette commande réussira.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # --------------------------------------------------------------------------
+  backend:
+    build: ./backend
+    container_name: todo_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app # bind mount -> hot-reload d'Uvicorn
+    depends_on:
+      db:
+        condition: service_healthy # démarre seulement quand PostgreSQL est prêt
+
+  # --------------------------------------------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: todo_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      # Force le polling du système de fichiers : indispensable pour que le
+      # hot-reload fonctionne depuis un bind mount sous Windows / WSL2 / macOS.
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app # bind mount -> hot-reload de Next.js
+      - /app/node_modules # volume anonyme : garde les deps installées dans l'image
+    depends_on:
+      - backend
+
+# ----------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: todo_postgres_data

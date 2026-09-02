@@ -1,0 +1,21 @@
+# Environnement
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+npm-debug.log*
+yarn-error.log*
+
+# Divers
+.DS_Store
+*.log
+.idea/
+.vscode/
