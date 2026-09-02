@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import {
   todoApi,
-  STATUS_META,
+  STATUS_COLOR,
+  STATUS_ORDER,
   type DailyStat,
   type TodoStatsResponse,
-  type TodoStatus,
 } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import TasksLineChart from "../components/TasksLineChart";
 import StatusPieChart from "../components/StatusPieChart";
 
@@ -32,6 +33,7 @@ function fillMissingDays(daily: DailyStat[]): DailyStat[] {
 }
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [stats, setStats] = useState<TodoStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,22 +43,20 @@ export default function DashboardPage() {
       .stats()
       .then(setStats)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Chargement impossible."),
+        setError(err instanceof Error ? err.message : t("dash.error_load")),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-        <p className="text-sm text-slate-500">
-          Suivi des tâches par jour de création et répartition par état.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("dash.title")}</h1>
+        <p className="text-sm text-slate-500">{t("dash.subtitle")}</p>
       </header>
 
       {loading && (
-        <p className="text-center text-sm text-slate-400">Chargement…</p>
+        <p className="text-center text-sm text-slate-400">{t("dash.loading")}</p>
       )}
 
       {error && (
@@ -69,17 +69,17 @@ export default function DashboardPage() {
         <>
           {/* Cartes de synthèse */}
           <div className="grid grid-cols-3 gap-3">
-            {(["pending", "done", "failed"] as TodoStatus[]).map((key) => (
+            {STATUS_ORDER.map((key) => (
               <div
                 key={key}
                 className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
               >
                 <p className="text-xs font-medium text-slate-500">
-                  {STATUS_META[key].label}
+                  {t(`status.${key}`)}
                 </p>
                 <p
                   className="mt-1 text-2xl font-bold"
-                  style={{ color: STATUS_META[key].color }}
+                  style={{ color: STATUS_COLOR[key] }}
                 >
                   {stats.totals[key] ?? 0}
                 </p>
@@ -90,7 +90,7 @@ export default function DashboardPage() {
           {/* Courbes par jour */}
           <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="mb-2 text-sm font-semibold text-slate-700">
-              Tâches par jour
+              {t("dash.tasks_per_day")}
             </h2>
             <TasksLineChart data={fillMissingDays(stats.daily)} />
           </section>
@@ -98,7 +98,7 @@ export default function DashboardPage() {
           {/* Camembert de répartition */}
           <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="mb-2 text-sm font-semibold text-slate-700">
-              Répartition par état
+              {t("dash.distribution")}
             </h2>
             <StatusPieChart totals={stats.totals} />
           </section>

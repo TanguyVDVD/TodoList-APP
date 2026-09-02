@@ -133,7 +133,16 @@ curl -X DELETE http://localhost:8000/todos/1
 
 ---
 
-## 7. Commandes utiles
+## 7. Internationalisation (FR / EN)
+
+- Bascule via l'icône ⚙️ en bas de la navbar → menu **Langue** (🇫🇷 Français / 🇬🇧 English).
+- Choix mémorisé dans `localStorage` (`todo-app.lang`), défaut : français.
+- Implémentation légère sans dépendance : contexte React dans
+  `frontend/app/lib/i18n.tsx` (dictionnaires `fr` / `en`, hook `useI18n()` →
+  `{ lang, locale, setLang, t }`). Pour ajouter une chaîne : une entrée dans
+  chaque dictionnaire, puis `t("ma.cle")` dans le composant.
+
+## 8. Commandes utiles
 
 ```bash
 docker compose down             # Arrêter et supprimer les conteneurs
@@ -145,7 +154,7 @@ docker compose build --no-cache # Reconstruire sans cache
 
 ---
 
-## 8. Dépannage
+## 9. Dépannage
 
 | Symptôme                                   | Cause probable / solution                                          |
 |--------------------------------------------|-------------------------------------------------------------------|

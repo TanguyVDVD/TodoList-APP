@@ -7,10 +7,12 @@ import {
   type Todo,
   type TodoUpdateInput,
 } from "./lib/api";
+import { useI18n } from "./lib/i18n";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 
 export default function HomePage() {
+  const { t } = useI18n();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,11 +23,11 @@ export default function HomePage() {
       setError(null);
       setTodos(await todoApi.list());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Chargement impossible.");
+      setError(err instanceof Error ? err.message : t("home.error_load"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -50,25 +52,21 @@ export default function HomePage() {
   // --- Compteurs par état -------------------------------------------------
   const counts = useMemo(() => {
     const c = { pending: 0, done: 0, failed: 0 };
-    for (const t of todos) c[todoStatus(t)] += 1;
+    for (const todo of todos) c[todoStatus(todo)] += 1;
     return c;
   }, [todos]);
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Ma Todo List</h1>
-        <p className="text-sm text-slate-500">
-          {counts.pending} en cours · {counts.done} terminée
-          {counts.done > 1 ? "s" : ""} · {counts.failed} non réalisée
-          {counts.failed > 1 ? "s" : ""}
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("home.title")}</h1>
+        <p className="text-sm text-slate-500">{t("home.counts", counts)}</p>
       </header>
 
       <TodoForm onCreate={handleCreate} />
 
       {loading && (
-        <p className="text-center text-sm text-slate-400">Chargement…</p>
+        <p className="text-center text-sm text-slate-400">{t("home.loading")}</p>
       )}
 
       {error && (
@@ -79,7 +77,7 @@ export default function HomePage() {
             onClick={() => void refresh()}
             className="rounded-md px-2 py-1 font-medium underline"
           >
-            Réessayer
+            {t("home.retry")}
           </button>
         </div>
       )}

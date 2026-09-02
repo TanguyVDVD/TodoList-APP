@@ -8,7 +8,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { STATUS_META, type TodoStatus } from "../lib/api";
+import { STATUS_COLOR, STATUS_ORDER, type TodoStatus } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 interface Props {
   totals: Record<TodoStatus, number>;
@@ -16,10 +17,12 @@ interface Props {
 
 /** Camembert de la répartition des tâches par état. */
 export default function StatusPieChart({ totals }: Props) {
-  const data = (Object.keys(STATUS_META) as TodoStatus[]).map((key) => ({
+  const { t } = useI18n();
+
+  const data = STATUS_ORDER.map((key) => ({
     key,
-    name: STATUS_META[key].label,
-    color: STATUS_META[key].color,
+    name: t(`status.${key}`),
+    color: STATUS_COLOR[key],
     value: totals[key] ?? 0,
   }));
 
@@ -27,7 +30,7 @@ export default function StatusPieChart({ totals }: Props) {
   if (isEmpty) {
     return (
       <p className="flex h-72 items-center justify-center text-sm text-slate-400">
-        Aucune tâche à afficher.
+        {t("dash.no_data")}
       </p>
     );
   }

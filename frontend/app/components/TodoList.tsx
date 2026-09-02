@@ -1,6 +1,7 @@
 "use client";
 
 import type { Todo, TodoUpdateInput } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import TodoItem from "./TodoItem";
 
 interface TodoListProps {
@@ -11,10 +12,12 @@ interface TodoListProps {
 
 /** Affiche la liste des tâches ou un état vide. */
 export default function TodoList({ todos, onUpdate, onDelete }: TodoListProps) {
+  const { t } = useI18n();
+
   if (todos.length === 0) {
     return (
       <p className="rounded-xl bg-white p-6 text-center text-sm text-slate-400 ring-1 ring-slate-200">
-        Aucune tâche pour le moment. Ajoutez-en une ci-dessus.
+        {t("list.empty")}
       </p>
     );
   }

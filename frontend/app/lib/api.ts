@@ -25,11 +25,17 @@ export function todoStatus(todo: Todo): TodoStatus {
   return "pending";
 }
 
-/** Libellé + couleur associés à chaque état (réutilisés partout : badges, graphes). */
-export const STATUS_META: Record<TodoStatus, { label: string; color: string }> = {
-  pending: { label: "En cours", color: "#64748b" }, // slate-500
-  done: { label: "Terminée", color: "#16a34a" }, // green-600
-  failed: { label: "Non réalisée", color: "#dc2626" }, // red-600
+/** Ordre d'affichage canonique des états. */
+export const STATUS_ORDER: TodoStatus[] = ["pending", "done", "failed"];
+
+/**
+ * Couleur associée à chaque état (source unique : badges + graphes).
+ * Les libellés sont traduits via `useI18n()` -> clé `status.<état>`.
+ */
+export const STATUS_COLOR: Record<TodoStatus, string> = {
+  pending: "#64748b", // slate-500
+  done: "#16a34a", // green-600
+  failed: "#dc2626", // red-600
 };
 
 /** Une entrée par jour renvoyée par GET /todos/stats. */

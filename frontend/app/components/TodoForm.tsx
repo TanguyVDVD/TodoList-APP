@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "../lib/i18n";
 
 interface TodoFormProps {
   /** Callback appelé avec les valeurs validées ; peut lever une erreur. */
@@ -9,6 +10,7 @@ interface TodoFormProps {
 
 /** Formulaire d'ajout d'une tâche (titre obligatoire, description optionnelle). */
 export default function TodoForm({ onCreate }: TodoFormProps) {
+  const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -18,7 +20,7 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
     event.preventDefault();
     const cleanTitle = title.trim();
     if (!cleanTitle) {
-      setError("Le titre est obligatoire.");
+      setError(t("form.title_required"));
       return;
     }
 
@@ -29,7 +31,7 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
       setTitle("");
       setDescription("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+      setError(err instanceof Error ? err.message : t("form.error_unknown"));
     } finally {
       setSubmitting(false);
     }
@@ -44,14 +46,14 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Que faut-il faire ?"
+        placeholder={t("form.title_placeholder")}
         maxLength={255}
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
       <textarea
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Description (optionnelle)"
+        placeholder={t("form.desc_placeholder")}
         rows={2}
         maxLength={2000}
         className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
@@ -64,7 +66,7 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
         disabled={submitting}
         className="self-start rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "Ajout…" : "Ajouter la tâche"}
+        {submitting ? t("form.submitting") : t("form.submit")}
       </button>
     </form>
   );
