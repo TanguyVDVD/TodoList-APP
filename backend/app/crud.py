@@ -5,7 +5,7 @@ les fonctions reçoivent une `Session` et des schémas Pydantic, et renvoient
 des objets ORM (ou `None` / `bool` selon le cas).
 """
 
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -58,6 +58,49 @@ def update_todo(
     db.commit()
     db.refresh(todo)
     return todo
+
+
+def _status_expr():
+    """Expression SQL renvoyant l'état textuel d'une tâche."""
+    return case(
+        (models.Todo.completed.is_(True), "done"),
+        (models.Todo.not_done.is_(True), "failed"),
+        else_="pending",
+    )
+
+
+def get_stats(db: Session) -> dict:
+    """Agrège le nombre de tâches par jour de création et par état.
+
+    Retourne un dict compatible avec `schemas.TodoStats` :
+    - `totals` : total par état
+    - `daily`  : une entrée par jour, triée par date croissante
+    """
+    day_expr = func.date(models.Todo.created_at)
+
+    stmt = (
+        select(
+            day_expr.label("day"),
+            _status_expr().label("status"),
+            func.count(models.Todo.id).label("count"),
+        )
+        .group_by(day_expr, _status_expr())
+        .order_by(day_expr)
+    )
+
+    totals = {"pending": 0, "done": 0, "failed": 0}
+    per_day: dict[str, dict[str, int]] = {}
+
+    for day, status, count in db.execute(stmt).all():
+        date_key = day.isoformat()
+        bucket = per_day.setdefault(date_key, {"pending": 0, "done": 0, "failed": 0})
+        bucket[status] += count
+        totals[status] += count
+
+    daily = [
+        {"date": date_key, **counts} for date_key, counts in sorted(per_day.items())
+    ]
+    return {"totals": totals, "daily": daily}
 
 
 def delete_todo(db: Session, todo_id: int) -> bool:

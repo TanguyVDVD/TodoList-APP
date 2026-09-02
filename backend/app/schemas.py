@@ -28,6 +28,30 @@ class TodoUpdate(BaseModel):
     not_done: bool | None = None
 
 
+class StatusTotals(BaseModel):
+    """Nombre de tâches par état (toutes dates confondues)."""
+
+    pending: int
+    done: int
+    failed: int
+
+
+class DailyStat(BaseModel):
+    """Répartition des tâches créées un jour donné, par état."""
+
+    date: str  # "YYYY-MM-DD"
+    pending: int
+    done: int
+    failed: int
+
+
+class TodoStats(BaseModel):
+    """Payload du tableau de bord (`GET /todos/stats`)."""
+
+    totals: StatusTotals
+    daily: list[DailyStat]
+
+
 class TodoResponse(TodoBase):
     """Représentation renvoyée au client."""
 

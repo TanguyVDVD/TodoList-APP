@@ -63,6 +63,12 @@ def list_todos(
     return crud.get_todos(db, skip=skip, limit=limit)
 
 
+@app.get("/todos/stats", response_model=schemas.TodoStats, tags=["todos"])
+def todo_stats(db: Session = Depends(get_db)) -> dict:
+    """Statistiques agrégées pour le tableau de bord (par jour + totaux)."""
+    return crud.get_stats(db)
+
+
 @app.post(
     "/todos/",
     response_model=schemas.TodoResponse,

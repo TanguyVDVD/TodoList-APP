@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Sidebar from "./components/Sidebar";
 
 export const metadata: Metadata = {
   title: "Todo List",
@@ -12,7 +13,10 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen bg-slate-100 text-slate-900">
-        {children}
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <div className="min-w-0 flex-1">{children}</div>
+        </div>
       </body>
     </html>
   );
