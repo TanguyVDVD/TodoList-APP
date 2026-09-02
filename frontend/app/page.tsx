@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  tagApi,
   todoApi,
   todoStatus,
+  type Tag,
   type Todo,
+  type TodoCreateInput,
   type TodoUpdateInput,
 } from "./lib/api";
 import { useI18n } from "./lib/i18n";
@@ -14,14 +17,19 @@ import TodoList from "./components/TodoList";
 export default function HomePage() {
   const { t } = useI18n();
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Chargement initial ---------------------------------------------------
   const refresh = useCallback(async () => {
     try {
       setError(null);
-      setTodos(await todoApi.list());
+      const [todoList, tagList] = await Promise.all([
+        todoApi.list(),
+        tagApi.list(),
+      ]);
+      setTodos(todoList);
+      setTags(tagList);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("home.error_load"));
     } finally {
@@ -33,9 +41,8 @@ export default function HomePage() {
     void refresh();
   }, [refresh]);
 
-  // --- Actions (mise à jour optimiste de l'état local) ---------------------
-  async function handleCreate(title: string, description: string) {
-    const created = await todoApi.create({ title, description });
+  async function handleCreate(input: TodoCreateInput) {
+    const created = await todoApi.create(input);
     setTodos((prev) => [created, ...prev]);
   }
 
@@ -49,7 +56,6 @@ export default function HomePage() {
     setTodos((prev) => prev.filter((t) => t.id !== id));
   }
 
-  // --- Compteurs par état -------------------------------------------------
   const counts = useMemo(() => {
     const c = { pending: 0, done: 0, failed: 0 };
     for (const todo of todos) c[todoStatus(todo)] += 1;
@@ -63,7 +69,7 @@ export default function HomePage() {
         <p className="text-sm text-slate-500">{t("home.counts", counts)}</p>
       </header>
 
-      <TodoForm onCreate={handleCreate} />
+      <TodoForm tags={tags} onCreate={handleCreate} />
 
       {loading && (
         <p className="text-center text-sm text-slate-400">{t("home.loading")}</p>
@@ -85,6 +91,7 @@ export default function HomePage() {
       {!loading && !error && (
         <TodoList
           todos={todos}
+          allTags={tags}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
         />

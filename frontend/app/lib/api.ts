@@ -6,6 +6,12 @@
  * http://localhost:8000), et non depuis le réseau interne Docker.
  */
 
+export interface Tag {
+  id: number;
+  name: string;
+  color: string; // "#rrggbb"
+}
+
 export interface Todo {
   id: number;
   title: string;
@@ -14,6 +20,7 @@ export interface Todo {
   /** Marquée explicitement comme non réalisée (exclusif avec `completed`). */
   not_done: boolean;
   created_at: string;
+  tags: Tag[];
 }
 
 /** État dérivé, pratique pour l'affichage. */
@@ -46,14 +53,23 @@ export interface DailyStat {
   failed: number;
 }
 
+export interface TagCount {
+  id: number;
+  name: string;
+  color: string;
+  count: number;
+}
+
 export interface TodoStatsResponse {
   totals: Record<TodoStatus, number>;
   daily: DailyStat[];
+  tags: TagCount[];
 }
 
 export interface TodoCreateInput {
   title: string;
   description?: string;
+  tag_ids?: number[];
 }
 
 export interface TodoUpdateInput {
@@ -61,6 +77,12 @@ export interface TodoUpdateInput {
   description?: string;
   completed?: boolean;
   not_done?: boolean;
+  tag_ids?: number[];
+}
+
+export interface TagCreateInput {
+  name: string;
+  color?: string;
 }
 
 const API_URL =
@@ -118,6 +140,28 @@ export const todoApi = {
   stats(): Promise<TodoStatsResponse> {
     return fetch(`${API_URL}/todos/stats`, { cache: "no-store" }).then((r) =>
       parse<TodoStatsResponse>(r),
+    );
+  },
+};
+
+export const tagApi = {
+  list(): Promise<Tag[]> {
+    return fetch(`${API_URL}/tags/`, { cache: "no-store" }).then((r) =>
+      parse<Tag[]>(r),
+    );
+  },
+
+  create(input: TagCreateInput): Promise<Tag> {
+    return fetch(`${API_URL}/tags/`, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    }).then((r) => parse<Tag>(r));
+  },
+
+  remove(id: number): Promise<void> {
+    return fetch(`${API_URL}/tags/${id}`, { method: "DELETE" }).then((r) =>
+      parse<void>(r),
     );
   },
 };

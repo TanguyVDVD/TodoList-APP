@@ -4,6 +4,38 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
+
+# --- Tags -------------------------------------------------------------------
+
+class TagBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    color: str = Field(default="#64748b", pattern=HEX_COLOR)
+
+
+class TagCreate(TagBase):
+    """Payload pour `POST /tags/` (la couleur est optionnelle)."""
+
+    color: str | None = Field(default=None, pattern=HEX_COLOR)
+
+
+class TagResponse(TagBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class TagCount(BaseModel):
+    """Nombre de tâches portant un tag donné (pour le dashboard)."""
+
+    id: int
+    name: str
+    color: str
+    count: int
+
+
+# --- Todos ------------------------------------------------------------------
 
 class TodoBase(BaseModel):
     """Champs communs aux opérations de création."""
@@ -15,18 +47,24 @@ class TodoBase(BaseModel):
 class TodoCreate(TodoBase):
     """Payload attendu pour `POST /todos/`."""
 
+    tag_ids: list[int] = Field(default_factory=list)
+
 
 class TodoUpdate(BaseModel):
     """Payload pour `PUT /todos/{id}` — tous les champs sont optionnels.
 
     Seuls les champs réellement fournis sont modifiés (mise à jour partielle).
+    `tag_ids` remplace l'ensemble des tags de la tâche quand il est fourni.
     """
 
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=2000)
     completed: bool | None = None
     not_done: bool | None = None
+    tag_ids: list[int] | None = None
 
+
+# --- Statistiques ----------------------------------------------------------
 
 class StatusTotals(BaseModel):
     """Nombre de tâches par état (toutes dates confondues)."""
@@ -50,7 +88,10 @@ class TodoStats(BaseModel):
 
     totals: StatusTotals
     daily: list[DailyStat]
+    tags: list[TagCount]
 
+
+# --- Réponse Todo ---------------------------------------------------------
 
 class TodoResponse(TodoBase):
     """Représentation renvoyée au client."""
@@ -63,3 +104,4 @@ class TodoResponse(TodoBase):
     completed: bool
     not_done: bool
     created_at: datetime
+    tags: list[TagResponse] = []

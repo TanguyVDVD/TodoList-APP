@@ -111,3 +111,44 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tâche {todo_id} introuvable.",
         )
+
+
+# --- Endpoints Tags -------------------------------------------------------------
+
+@app.get("/tags/", response_model=list[schemas.TagResponse], tags=["tags"])
+def list_tags(db: Session = Depends(get_db)) -> list[models.Tag]:
+    """Liste tous les tags."""
+    return crud.get_tags(db)
+
+
+@app.post(
+    "/tags/",
+    response_model=schemas.TagResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["tags"],
+)
+def create_tag(
+    payload: schemas.TagCreate,
+    db: Session = Depends(get_db),
+) -> models.Tag:
+    """Crée un tag. Le nom doit être unique."""
+    if crud.get_tag_by_name(db, payload.name) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Le tag « {payload.name} » existe déjà.",
+        )
+    return crud.create_tag(db, payload)
+
+
+@app.delete(
+    "/tags/{tag_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["tags"],
+)
+def delete_tag(tag_id: int, db: Session = Depends(get_db)) -> None:
+    """Supprime un tag et retire son association de toutes les tâches."""
+    if not crud.delete_tag(db, tag_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tag {tag_id} introuvable.",
+        )

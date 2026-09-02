@@ -35,6 +35,22 @@ function ChartIcon() {
   );
 }
 
+/** Icône étiquette (tags). */
+function TagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <path
+        d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Icône engrenage (paramètres). */
 function GearIcon() {
   return (
@@ -68,6 +84,7 @@ export default function Sidebar() {
 
   const links = [
     { href: "/", label: t("nav.home"), Icon: HomeIcon },
+    { href: "/tags", label: t("nav.tags"), Icon: TagIcon },
     { href: "/dashboard", label: t("nav.dashboard"), Icon: ChartIcon },
   ];
 

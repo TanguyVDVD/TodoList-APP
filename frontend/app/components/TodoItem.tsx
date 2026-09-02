@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { todoStatus, type Todo, type TodoUpdateInput } from "../lib/api";
+import { useEffect, useRef, useState } from "react";
+import { todoStatus, type Tag, type Todo, type TodoUpdateInput } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 interface TodoItemProps {
   todo: Todo;
+  /** Tous les tags existants (pour l'éditeur de tags). */
+  allTags: Tag[];
   onUpdate: (todo: Todo, patch: TodoUpdateInput) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
-/** Icône coche (✓). */
 function CheckIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -25,7 +26,6 @@ function CheckIcon() {
   );
 }
 
-/** Icône croix (✗). */
 function CrossIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -45,18 +45,48 @@ const BADGE_CLASS: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 };
 
+/** Petite puce colorée affichant un tag. */
+function TagPill({ tag }: { tag: Tag }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+      style={{
+        backgroundColor: `${tag.color}1a`,
+        color: tag.color,
+        borderColor: `${tag.color}80`,
+      }}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+      {tag.name}
+    </span>
+  );
+}
+
 /**
- * Ligne d'une tâche.
- *
- * Deux cases mutuellement exclusives :
- *  - "Terminée"      -> coche verte
- *  - "Non réalisée"  -> croix rouge
- * Re-cliquer sur une case active la retire (retour à l'état "En cours").
+ * Ligne d'une tâche : 2 cases d'état (terminée / non réalisée), tags, suppression.
  */
-export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
+export default function TodoItem({
+  todo,
+  allTags,
+  onUpdate,
+  onDelete,
+}: TodoItemProps) {
   const { t, locale } = useI18n();
   const [busy, setBusy] = useState(false);
-  const status = todoStatus(todo); // "pending" | "done" | "failed"
+  const [tagMenuOpen, setTagMenuOpen] = useState(false);
+  const tagMenuRef = useRef<HTMLDivElement>(null);
+  const status = todoStatus(todo);
+
+  useEffect(() => {
+    if (!tagMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (tagMenuRef.current && !tagMenuRef.current.contains(e.target as Node)) {
+        setTagMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [tagMenuOpen]);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -70,13 +100,19 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
     }
   }
 
-  // Bascule "terminée" et annule "non réalisée".
   const toggleDone = () =>
     run(() => onUpdate(todo, { completed: !todo.completed, not_done: false }));
 
-  // Bascule "non réalisée" et annule "terminée".
   const toggleNotDone = () =>
     run(() => onUpdate(todo, { not_done: !todo.not_done, completed: false }));
+
+  const toggleTag = (tagId: number) => {
+    const current = todo.tags.map((tag) => tag.id);
+    const next = current.includes(tagId)
+      ? current.filter((id) => id !== tagId)
+      : [...current, tagId];
+    return run(() => onUpdate(todo, { tag_ids: next }));
+  };
 
   const createdAt = new Date(todo.created_at).toLocaleString(locale, {
     dateStyle: "short",
@@ -96,9 +132,8 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
         busy ? "pointer-events-none opacity-60" : ""
       }`}
     >
-      {/* --- Les deux cases --- */}
+      {/* --- Les deux cases d'état --- */}
       <div className="mt-0.5 flex shrink-0 items-center gap-1.5">
-        {/* Case 1 : terminée -> coche verte */}
         <button
           type="button"
           role="checkbox"
@@ -115,8 +150,6 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
         >
           <CheckIcon />
         </button>
-
-        {/* Case 2 : non réalisée -> croix rouge */}
         <button
           type="button"
           role="checkbox"
@@ -151,7 +184,63 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
             {todo.description}
           </p>
         )}
-        <p className="mt-1 flex items-center gap-2 text-xs">
+
+        {/* Tags de la tâche + bouton d'édition */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          {todo.tags.map((tag) => (
+            <TagPill key={tag.id} tag={tag} />
+          ))}
+
+          <div ref={tagMenuRef} className="relative">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setTagMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={tagMenuOpen}
+              className="rounded-full border border-dashed border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-700"
+            >
+              {t("item.edit_tags")}
+            </button>
+
+            {tagMenuOpen && (
+              <div className="absolute left-0 top-full z-10 mt-1 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                {allTags.length === 0 ? (
+                  <p className="px-2 py-1.5 text-xs text-slate-400">
+                    {t("tags.none_yet")}
+                  </p>
+                ) : (
+                  allTags.map((tag) => {
+                    const on = todo.tags.some((x) => x.id === tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition ${
+                          on
+                            ? "bg-slate-100 font-medium"
+                            : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: tag.color }}
+                        />
+                        <span className="flex-1 text-left text-slate-700">
+                          {tag.name}
+                        </span>
+                        {on && <span className="text-slate-500">✓</span>}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p className="mt-1.5 flex items-center gap-2 text-xs">
           <span
             className={`inline-block rounded px-1.5 py-0.5 font-medium ${BADGE_CLASS[status]}`}
           >

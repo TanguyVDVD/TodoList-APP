@@ -11,6 +11,7 @@ import {
 import { useI18n } from "../lib/i18n";
 import TasksLineChart from "../components/TasksLineChart";
 import StatusPieChart from "../components/StatusPieChart";
+import TagPieChart from "../components/TagPieChart";
 
 /**
  * Complète les jours manquants entre la première et la dernière date
@@ -95,13 +96,22 @@ export default function DashboardPage() {
             <TasksLineChart data={fillMissingDays(stats.daily)} />
           </section>
 
-          {/* Camembert de répartition */}
-          <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-            <h2 className="mb-2 text-sm font-semibold text-slate-700">
-              {t("dash.distribution")}
-            </h2>
-            <StatusPieChart totals={stats.totals} />
-          </section>
+          {/* Camemberts de répartition */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+              <h2 className="mb-2 text-sm font-semibold text-slate-700">
+                {t("dash.distribution")}
+              </h2>
+              <StatusPieChart totals={stats.totals} />
+            </section>
+
+            <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+              <h2 className="mb-2 text-sm font-semibold text-slate-700">
+                {t("dash.tag_distribution")}
+              </h2>
+              <TagPieChart tags={stats.tags} />
+            </section>
+          </div>
         </>
       )}
     </main>

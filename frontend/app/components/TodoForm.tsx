@@ -1,20 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import type { Tag, TodoCreateInput } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 interface TodoFormProps {
-  /** Callback appelé avec les valeurs validées ; peut lever une erreur. */
-  onCreate: (title: string, description: string) => Promise<void>;
+  /** Tags disponibles pour l'association. */
+  tags: Tag[];
+  /** Callback appelé avec le payload validé ; peut lever une erreur. */
+  onCreate: (input: TodoCreateInput) => Promise<void>;
 }
 
-/** Formulaire d'ajout d'une tâche (titre obligatoire, description optionnelle). */
-export default function TodoForm({ onCreate }: TodoFormProps) {
+/** Formulaire d'ajout d'une tâche (titre, description, tags optionnels). */
+export default function TodoForm({ tags, onCreate }: TodoFormProps) {
   const { t } = useI18n();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [tagIds, setTagIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function toggleTag(id: number) {
+    setTagIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -27,9 +37,14 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
     setSubmitting(true);
     setError(null);
     try {
-      await onCreate(cleanTitle, description.trim());
+      await onCreate({
+        title: cleanTitle,
+        description: description.trim(),
+        tag_ids: tagIds,
+      });
       setTitle("");
       setDescription("");
+      setTagIds([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("form.error_unknown"));
     } finally {
@@ -58,6 +73,43 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
         maxLength={2000}
         className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
+
+      {tags.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-slate-500">
+            {t("form.tags_label")}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => {
+              const on = tagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => toggleTag(tag.id)}
+                  aria-pressed={on}
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition"
+                  style={
+                    on
+                      ? {
+                          backgroundColor: `${tag.color}1a`,
+                          color: tag.color,
+                          borderColor: `${tag.color}80`,
+                        }
+                      : { borderColor: "#cbd5e1", color: "#64748b" }
+                  }
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  {tag.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

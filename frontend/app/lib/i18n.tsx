@@ -22,8 +22,24 @@ const fr: Dict = {
   "nav.brand": "Todo App",
   "nav.home": "Accueil",
   "nav.dashboard": "Tableau de bord",
+  "nav.tags": "Tags",
   "settings.title": "Paramètres",
   "settings.language": "Langue",
+
+  "tags.title": "Tags",
+  "tags.subtitle": "Créez des tags puis associez-les à vos tâches.",
+  "tags.name_placeholder": "Nom du tag",
+  "tags.add": "Créer le tag",
+  "tags.adding": "Création…",
+  "tags.name_required": "Le nom est obligatoire.",
+  "tags.empty": "Aucun tag pour le moment.",
+  "tags.delete": "Supprimer le tag",
+  "tags.tasks_count": (p) =>
+    `${p.count} tâche${Number(p.count) > 1 ? "s" : ""}`,
+  "tags.none_yet": "Créez d'abord des tags dans l'onglet Tags.",
+
+  "form.tags_label": "Tags",
+  "item.edit_tags": "Modifier les tags",
 
   "status.pending": "En cours",
   "status.done": "Terminée",
@@ -59,7 +75,9 @@ const fr: Dict = {
   "dash.error_load": "Chargement impossible.",
   "dash.tasks_per_day": "Tâches par jour",
   "dash.distribution": "Répartition par état",
+  "dash.tag_distribution": "Répartition par tag",
   "dash.no_data": "Aucune tâche à afficher.",
+  "dash.no_tags": "Aucun tag associé à une tâche.",
   "chart.day_label": (p) => `Jour : ${p.date}`,
 };
 
@@ -67,8 +85,23 @@ const en: Dict = {
   "nav.brand": "Todo App",
   "nav.home": "Home",
   "nav.dashboard": "Dashboard",
+  "nav.tags": "Tags",
   "settings.title": "Settings",
   "settings.language": "Language",
+
+  "tags.title": "Tags",
+  "tags.subtitle": "Create tags, then attach them to your tasks.",
+  "tags.name_placeholder": "Tag name",
+  "tags.add": "Create tag",
+  "tags.adding": "Creating…",
+  "tags.name_required": "Name is required.",
+  "tags.empty": "No tags yet.",
+  "tags.delete": "Delete tag",
+  "tags.tasks_count": (p) => `${p.count} task${Number(p.count) > 1 ? "s" : ""}`,
+  "tags.none_yet": "Create tags first in the Tags tab.",
+
+  "form.tags_label": "Tags",
+  "item.edit_tags": "Edit tags",
 
   "status.pending": "In progress",
   "status.done": "Done",
@@ -102,7 +135,9 @@ const en: Dict = {
   "dash.error_load": "Unable to load.",
   "dash.tasks_per_day": "Tasks per day",
   "dash.distribution": "Distribution by status",
+  "dash.tag_distribution": "Distribution by tag",
   "dash.no_data": "No data to display.",
+  "dash.no_tags": "No tag attached to any task.",
   "chart.day_label": (p) => `Day: ${p.date}`,
 };
 
