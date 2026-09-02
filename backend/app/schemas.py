@@ -1,10 +1,14 @@
 """Schémas Pydantic (validation entrée / sérialisation sortie)."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
+# Niveaux de priorité d'une tâche (du plus faible au plus fort).
+Priority = Literal["low", "medium", "high", "urgent"]
 
 
 # --- Tags -------------------------------------------------------------------
@@ -42,6 +46,7 @@ class TodoBase(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=255, description="Titre de la tâche")
     description: str = Field(default="", max_length=2000, description="Description optionnelle")
+    priority: Priority = "medium"
 
 
 class TodoCreate(TodoBase):
@@ -61,6 +66,7 @@ class TodoUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=2000)
     completed: bool | None = None
     not_done: bool | None = None
+    priority: Priority | None = None
     tag_ids: list[int] | None = None
 
 

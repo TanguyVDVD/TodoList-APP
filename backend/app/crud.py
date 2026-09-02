@@ -79,6 +79,7 @@ def create_todo(db: Session, payload: schemas.TodoCreate) -> models.Todo:
     todo = models.Todo(
         title=payload.title,
         description=payload.description,
+        priority=payload.priority,
         tags=_resolve_tags(db, payload.tag_ids),
     )
     db.add(todo)

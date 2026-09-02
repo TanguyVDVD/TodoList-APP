@@ -133,16 +133,23 @@ curl -X DELETE http://localhost:8000/todos/1
 
 ---
 
-## 7. Tags
+## 7. Priorité et étiquettes (deux concepts distincts)
 
-- Onglet **Tags** (navbar) : créer / supprimer des tags (nom unique, couleur
-  auto depuis une palette).
-- Association many-to-many `todos <-> tags` (table `todo_tags`).
-  - À la création d'une tâche : cases à cocher dans le formulaire.
-  - Sur une tâche existante : bouton « Modifier les tags » (popover).
-- API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
-  `tag_ids` (POST) et le remplacent quand fourni (PUT).
-- Dashboard : camembert **Répartition par tag** (`GET /todos/stats` -> champ `tags`).
+**Priorité** — une seule valeur par tâche : `low` | `medium` | `high` | `urgent`
+(colonne `todos.priority`, défaut `medium`). Choisie à la création (pastilles) et
+modifiable sur chaque tâche (menu déroulant coloré vert → rouge).
+
+**Étiquettes (tags)** — relation *many-to-many* : 0..N étiquettes par tâche.
+- Onglet **Étiquettes** (navbar, « Tags » en anglais) : créer / supprimer
+  (nom unique, couleur auto depuis une palette).
+- Table d'association `todo_tags`.
+  - À la création : cases à cocher dans le formulaire.
+  - Sur une tâche existante : bouton « Modifier les étiquettes » (popover).
+- Dashboard : camembert **Répartition par étiquette**
+  (`GET /todos/stats` → champ `tags`).
+
+API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
+`priority` et `tag_ids` (POST + PUT, `tag_ids` remplace l'ensemble).
 
 ## 8. Internationalisation (FR / EN)
 

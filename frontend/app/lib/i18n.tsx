@@ -22,24 +22,30 @@ const fr: Dict = {
   "nav.brand": "Todo App",
   "nav.home": "Accueil",
   "nav.dashboard": "Tableau de bord",
-  "nav.tags": "Tags",
+  "nav.tags": "Étiquettes",
   "settings.title": "Paramètres",
   "settings.language": "Langue",
 
-  "tags.title": "Tags",
-  "tags.subtitle": "Créez des tags puis associez-les à vos tâches.",
-  "tags.name_placeholder": "Nom du tag",
-  "tags.add": "Créer le tag",
+  "tags.title": "Étiquettes",
+  "tags.subtitle": "Créez des étiquettes puis associez-les à vos tâches.",
+  "tags.name_placeholder": "Nom de l'étiquette",
+  "tags.add": "Créer l'étiquette",
   "tags.adding": "Création…",
   "tags.name_required": "Le nom est obligatoire.",
-  "tags.empty": "Aucun tag pour le moment.",
-  "tags.delete": "Supprimer le tag",
+  "tags.empty": "Aucune étiquette pour le moment.",
+  "tags.delete": "Supprimer l'étiquette",
   "tags.tasks_count": (p) =>
     `${p.count} tâche${Number(p.count) > 1 ? "s" : ""}`,
-  "tags.none_yet": "Créez d'abord des tags dans l'onglet Tags.",
+  "tags.none_yet": "Créez d'abord des étiquettes dans l'onglet Étiquettes.",
 
-  "form.tags_label": "Tags",
-  "item.edit_tags": "Modifier les tags",
+  "form.tags_label": "Étiquettes",
+  "item.edit_tags": "Modifier les étiquettes",
+
+  "priority.label": "Priorité",
+  "priority.low": "Faible",
+  "priority.medium": "Moyen",
+  "priority.high": "Élevé",
+  "priority.urgent": "Urgent",
 
   "status.pending": "En cours",
   "status.done": "Terminée",
@@ -75,9 +81,9 @@ const fr: Dict = {
   "dash.error_load": "Chargement impossible.",
   "dash.tasks_per_day": "Tâches par jour",
   "dash.distribution": "Répartition par état",
-  "dash.tag_distribution": "Répartition par tag",
+  "dash.tag_distribution": "Répartition par étiquette",
   "dash.no_data": "Aucune tâche à afficher.",
-  "dash.no_tags": "Aucun tag associé à une tâche.",
+  "dash.no_tags": "Aucune étiquette associée à une tâche.",
   "chart.day_label": (p) => `Jour : ${p.date}`,
 };
 
@@ -102,6 +108,12 @@ const en: Dict = {
 
   "form.tags_label": "Tags",
   "item.edit_tags": "Edit tags",
+
+  "priority.label": "Priority",
+  "priority.low": "Low",
+  "priority.medium": "Medium",
+  "priority.high": "High",
+  "priority.urgent": "Urgent",
 
   "status.pending": "In progress",
   "status.done": "Done",

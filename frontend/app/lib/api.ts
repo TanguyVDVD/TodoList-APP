@@ -12,6 +12,19 @@ export interface Tag {
   color: string; // "#rrggbb"
 }
 
+/** Niveau de priorité d'une tâche (concept distinct des tags). */
+export type Priority = "low" | "medium" | "high" | "urgent";
+
+export const PRIORITY_ORDER: Priority[] = ["low", "medium", "high", "urgent"];
+
+/** Couleur par niveau (échelle vert -> rouge). Libellés via i18n `priority.<n>`. */
+export const PRIORITY_COLOR: Record<Priority, string> = {
+  low: "#16a34a", // green-600
+  medium: "#ca8a04", // yellow-600
+  high: "#ea580c", // orange-600
+  urgent: "#dc2626", // red-600
+};
+
 export interface Todo {
   id: number;
   title: string;
@@ -19,6 +32,7 @@ export interface Todo {
   completed: boolean;
   /** Marquée explicitement comme non réalisée (exclusif avec `completed`). */
   not_done: boolean;
+  priority: Priority;
   created_at: string;
   tags: Tag[];
 }
@@ -69,6 +83,7 @@ export interface TodoStatsResponse {
 export interface TodoCreateInput {
   title: string;
   description?: string;
+  priority?: Priority;
   tag_ids?: number[];
 }
 
@@ -77,6 +92,7 @@ export interface TodoUpdateInput {
   description?: string;
   completed?: boolean;
   not_done?: boolean;
+  priority?: Priority;
   tag_ids?: number[];
 }
 

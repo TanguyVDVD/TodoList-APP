@@ -52,6 +52,12 @@ class Todo(Base):
         Boolean, nullable=False, default=False, server_default="false"
     )
 
+    # Niveau de priorité : "low" | "medium" | "high" | "urgent".
+    # Concept distinct des tags (une seule valeur par tâche).
+    priority: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="medium", server_default="medium"
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

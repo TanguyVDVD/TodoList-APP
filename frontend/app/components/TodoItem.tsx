@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { todoStatus, type Tag, type Todo, type TodoUpdateInput } from "../lib/api";
+import {
+  PRIORITY_COLOR,
+  PRIORITY_ORDER,
+  todoStatus,
+  type Priority,
+  type Tag,
+  type Todo,
+  type TodoUpdateInput,
+} from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 interface TodoItemProps {
@@ -240,16 +248,49 @@ export default function TodoItem({
           </div>
         </div>
 
-        <p className="mt-1.5 flex items-center gap-2 text-xs">
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
           <span
             className={`inline-block rounded px-1.5 py-0.5 font-medium ${BADGE_CLASS[status]}`}
           >
             {t(`status.${status}`)}
           </span>
+
+          {/* Priorité : sélecteur coloré, distinct des étiquettes */}
+          <span
+            className="inline-flex items-center gap-1 rounded px-1 py-0.5 font-medium"
+            style={{
+              backgroundColor: `${PRIORITY_COLOR[todo.priority]}1a`,
+              color: PRIORITY_COLOR[todo.priority],
+            }}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: PRIORITY_COLOR[todo.priority] }}
+            />
+            <select
+              aria-label={t("priority.label")}
+              value={todo.priority}
+              disabled={busy}
+              onChange={(e) =>
+                run(() =>
+                  onUpdate(todo, { priority: e.target.value as Priority }),
+                )
+              }
+              className="cursor-pointer bg-transparent font-medium outline-none"
+              style={{ color: PRIORITY_COLOR[todo.priority] }}
+            >
+              {PRIORITY_ORDER.map((level) => (
+                <option key={level} value={level} className="text-slate-800">
+                  {t(`priority.${level}`)}
+                </option>
+              ))}
+            </select>
+          </span>
+
           <span className="text-slate-400">
             {t("item.created_on", { date: createdAt })}
           </span>
-        </p>
+        </div>
       </div>
 
       {/* --- Suppression --- */}

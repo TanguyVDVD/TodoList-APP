@@ -27,6 +27,12 @@ with engine.begin() as _conn:
             "ADD COLUMN IF NOT EXISTS not_done BOOLEAN NOT NULL DEFAULT false"
         )
     )
+    _conn.execute(
+        text(
+            "ALTER TABLE todos "
+            "ADD COLUMN IF NOT EXISTS priority VARCHAR(10) NOT NULL DEFAULT 'medium'"
+        )
+    )
 
 app = FastAPI(
     title="Todo API",
