@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { todoApi, type Todo } from "./lib/api";
+import {
+  todoApi,
+  todoStatus,
+  type Todo,
+  type TodoUpdateInput,
+} from "./lib/api";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
 
@@ -32,8 +37,8 @@ export default function HomePage() {
     setTodos((prev) => [created, ...prev]);
   }
 
-  async function handleToggle(todo: Todo) {
-    const updated = await todoApi.update(todo.id, { completed: !todo.completed });
+  async function handleUpdate(todo: Todo, patch: TodoUpdateInput) {
+    const updated = await todoApi.update(todo.id, patch);
     setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   }
 
@@ -42,20 +47,21 @@ export default function HomePage() {
     setTodos((prev) => prev.filter((t) => t.id !== id));
   }
 
-  const { remaining, done } = useMemo(
-    () => ({
-      remaining: todos.filter((t) => !t.completed).length,
-      done: todos.filter((t) => t.completed).length,
-    }),
-    [todos],
-  );
+  // --- Compteurs par état -------------------------------------------------
+  const counts = useMemo(() => {
+    const c = { pending: 0, done: 0, failed: 0 };
+    for (const t of todos) c[todoStatus(t)] += 1;
+    return c;
+  }, [todos]);
 
   return (
     <main className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-10">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">Ma Todo List</h1>
         <p className="text-sm text-slate-500">
-          {remaining} en cours · {done} terminée{done > 1 ? "s" : ""}
+          {counts.pending} en cours · {counts.done} terminée
+          {counts.done > 1 ? "s" : ""} · {counts.failed} non réalisée
+          {counts.failed > 1 ? "s" : ""}
         </p>
       </header>
 
@@ -81,7 +87,7 @@ export default function HomePage() {
       {!loading && !error && (
         <TodoList
           todos={todos}
-          onToggle={handleToggle}
+          onUpdate={handleUpdate}
           onDelete={handleDelete}
         />
       )}

@@ -1,16 +1,16 @@
 "use client";
 
-import type { Todo } from "../lib/api";
+import type { Todo, TodoUpdateInput } from "../lib/api";
 import TodoItem from "./TodoItem";
 
 interface TodoListProps {
   todos: Todo[];
-  onToggle: (todo: Todo) => Promise<void>;
+  onUpdate: (todo: Todo, patch: TodoUpdateInput) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
 /** Affiche la liste des tâches ou un état vide. */
-export default function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
+export default function TodoList({ todos, onUpdate, onDelete }: TodoListProps) {
   if (todos.length === 0) {
     return (
       <p className="rounded-xl bg-white p-6 text-center text-sm text-slate-400 ring-1 ring-slate-200">
@@ -25,7 +25,7 @@ export default function TodoList({ todos, onToggle, onDelete }: TodoListProps) {
         <TodoItem
           key={todo.id}
           todo={todo}
-          onToggle={onToggle}
+          onUpdate={onUpdate}
           onDelete={onDelete}
         />
       ))}

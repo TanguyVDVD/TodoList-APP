@@ -19,7 +19,14 @@ class Todo(Base):
 
     description: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
 
+    # Tâche menée à son terme.
     completed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
+    # Tâche explicitement marquée comme NON réalisée (abandonnée / non faite).
+    # Mutuellement exclusif avec `completed` (géré dans la couche crud).
+    not_done: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
 

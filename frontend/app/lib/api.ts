@@ -11,7 +11,18 @@ export interface Todo {
   title: string;
   description: string;
   completed: boolean;
+  /** Marquée explicitement comme non réalisée (exclusif avec `completed`). */
+  not_done: boolean;
   created_at: string;
+}
+
+/** État dérivé, pratique pour l'affichage. */
+export type TodoStatus = "pending" | "done" | "failed";
+
+export function todoStatus(todo: Todo): TodoStatus {
+  if (todo.completed) return "done";
+  if (todo.not_done) return "failed";
+  return "pending";
 }
 
 export interface TodoCreateInput {
@@ -23,6 +34,7 @@ export interface TodoUpdateInput {
   title?: string;
   description?: string;
   completed?: boolean;
+  not_done?: boolean;
 }
 
 const API_URL =

@@ -25,6 +25,7 @@ class TodoUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=2000)
     completed: bool | None = None
+    not_done: bool | None = None
 
 
 class TodoResponse(TodoBase):
@@ -36,4 +37,5 @@ class TodoResponse(TodoBase):
 
     id: int
     completed: bool
+    not_done: bool
     created_at: datetime

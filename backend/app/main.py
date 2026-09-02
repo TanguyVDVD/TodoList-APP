@@ -5,6 +5,7 @@ Lancement (dev) : uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -15,6 +16,17 @@ from .database import engine, get_db
 # Suffisant pour le développement. En production, on utiliserait Alembic
 # (migrations versionnées) plutôt que `create_all`.
 models.Base.metadata.create_all(bind=engine)
+
+# Micro-migration (dev) : `create_all` ne modifie pas une table existante.
+# On ajoute la colonne `not_done` si la table `todos` a été créée avant cette
+# fonctionnalité. En production, ceci serait une migration Alembic.
+with engine.begin() as _conn:
+    _conn.execute(
+        text(
+            "ALTER TABLE todos "
+            "ADD COLUMN IF NOT EXISTS not_done BOOLEAN NOT NULL DEFAULT false"
+        )
+    )
 
 app = FastAPI(
     title="Todo API",

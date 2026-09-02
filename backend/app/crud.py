@@ -45,8 +45,15 @@ def update_todo(
         return None
 
     # `exclude_unset=True` : on ne touche qu'aux champs explicitement envoyés.
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    for field, value in data.items():
         setattr(todo, field, value)
+
+    # Cohérence : une tâche ne peut pas être à la fois "terminée" et "non réalisée".
+    if data.get("completed"):
+        todo.not_done = False
+    if data.get("not_done"):
+        todo.completed = False
 
     db.commit()
     db.refresh(todo)
