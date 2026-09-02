@@ -3,9 +3,26 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  /* On assume un thème clair : sans cela, sur un OS en mode sombre le
+     navigateur rend les champs de formulaire avec un fond sombre alors que
+     le texte reste foncé (effet "noir sur noir"). */
+  color-scheme: light;
 }
 
 body {
   -webkit-font-smoothing: antialiased;
+}
+
+/* Filet de sécurité : tous les champs de saisie en texte foncé sur fond blanc,
+   quel que soit le thème du système. */
+input,
+textarea,
+select {
+  color: #0f172a; /* slate-900 */
+  background-color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8; /* slate-400 */
 }

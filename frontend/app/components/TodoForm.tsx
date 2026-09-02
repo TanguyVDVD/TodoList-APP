@@ -46,7 +46,7 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Que faut-il faire ?"
         maxLength={255}
-        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
       <textarea
         value={description}
@@ -54,7 +54,7 @@ export default function TodoForm({ onCreate }: TodoFormProps) {
         placeholder="Description (optionnelle)"
         rows={2}
         maxLength={2000}
-        className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+        className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
       />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
