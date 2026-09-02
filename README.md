@@ -151,7 +151,16 @@ modifiable sur chaque tâche (menu déroulant coloré vert → rouge).
 API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
 `priority` et `tag_ids` (POST + PUT, `tag_ids` remplace l'ensemble).
 
-## 8. Internationalisation (FR / EN)
+## 8. Kanban
+
+- Onglet **Kanban** (navbar) : 3 colonnes = les 3 états (En cours / Terminée /
+  Non réalisée), chaque tâche dans sa colonne.
+- **Glisser-déposer** une carte vers une autre colonne → `PUT /todos/{id}` avec
+  le patch d'état correspondant (mise à jour optimiste + resynchro si échec).
+- Implémenté avec l'API HTML5 Drag & Drop native (aucune dépendance ajoutée).
+  Limite : le drag natif ne fonctionne pas sur écran tactile.
+
+## 9. Internationalisation (FR / EN)
 
 - Bascule via l'icône ⚙️ en bas de la navbar → menu **Langue** (🇫🇷 Français / 🇬🇧 English).
 - Choix mémorisé dans `localStorage` (`todo-app.lang`), défaut : français.
@@ -160,7 +169,7 @@ API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
   `{ lang, locale, setLang, t }`). Pour ajouter une chaîne : une entrée dans
   chaque dictionnaire, puis `t("ma.cle")` dans le composant.
 
-## 9. Commandes utiles
+## 10. Commandes utiles
 
 ```bash
 docker compose down             # Arrêter et supprimer les conteneurs
@@ -172,7 +181,7 @@ docker compose build --no-cache # Reconstruire sans cache
 
 ---
 
-## 10. Dépannage
+## 11. Dépannage
 
 | Symptôme                                   | Cause probable / solution                                          |
 |--------------------------------------------|-------------------------------------------------------------------|

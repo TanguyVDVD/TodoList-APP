@@ -23,8 +23,14 @@ const fr: Dict = {
   "nav.home": "Accueil",
   "nav.dashboard": "Tableau de bord",
   "nav.tags": "Étiquettes",
+  "nav.kanban": "Kanban",
   "settings.title": "Paramètres",
   "settings.language": "Langue",
+
+  "kanban.title": "Kanban",
+  "kanban.subtitle":
+    "Glissez-déposez une tâche dans une colonne pour changer son état.",
+  "kanban.empty_column": "Déposez une tâche ici",
 
   "tags.title": "Étiquettes",
   "tags.subtitle": "Créez des étiquettes puis associez-les à vos tâches.",
@@ -92,8 +98,14 @@ const en: Dict = {
   "nav.home": "Home",
   "nav.dashboard": "Dashboard",
   "nav.tags": "Tags",
+  "nav.kanban": "Kanban",
   "settings.title": "Settings",
   "settings.language": "Language",
+
+  "kanban.title": "Kanban",
+  "kanban.subtitle":
+    "Drag and drop a task into a column to change its status.",
+  "kanban.empty_column": "Drop a task here",
 
   "tags.title": "Tags",
   "tags.subtitle": "Create tags, then attach them to your tasks.",
