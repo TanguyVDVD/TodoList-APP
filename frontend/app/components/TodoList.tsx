@@ -1,20 +1,29 @@
 "use client";
 
-import type { Todo, TodoUpdateInput } from "../lib/api";
+import type { Tag, Todo, TodoUpdateInput } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 import TodoItem from "./TodoItem";
 
 interface TodoListProps {
   todos: Todo[];
+  allTags: Tag[];
   onUpdate: (todo: Todo, patch: TodoUpdateInput) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
 }
 
 /** Affiche la liste des tâches ou un état vide. */
-export default function TodoList({ todos, onUpdate, onDelete }: TodoListProps) {
+export default function TodoList({
+  todos,
+  allTags,
+  onUpdate,
+  onDelete,
+}: TodoListProps) {
+  const { t } = useI18n();
+
   if (todos.length === 0) {
     return (
       <p className="rounded-xl bg-white p-6 text-center text-sm text-slate-400 ring-1 ring-slate-200">
-        Aucune tâche pour le moment. Ajoutez-en une ci-dessus.
+        {t("list.empty")}
       </p>
     );
   }
@@ -25,6 +34,7 @@ export default function TodoList({ todos, onUpdate, onDelete }: TodoListProps) {
         <TodoItem
           key={todo.id}
           todo={todo}
+          allTags={allTags}
           onUpdate={onUpdate}
           onDelete={onDelete}
         />

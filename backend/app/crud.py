@@ -1,4 +1,4 @@
-"""Opérations CRUD sur le modèle `Todo`.
+"""Opérations CRUD sur les modèles `Todo` et `Tag`.
 
 Cette couche isole la logique d'accès aux données des routes HTTP :
 les fonctions reçoivent une `Session` et des schémas Pydantic, et renvoient
@@ -10,6 +10,53 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 
+# Palette utilisée pour attribuer automatiquement une couleur à un nouveau tag.
+_TAG_PALETTE = [
+    "#2563eb", "#16a34a", "#dc2626", "#d97706", "#7c3aed",
+    "#0891b2", "#db2777", "#65a30d", "#4f46e5", "#ea580c",
+]
+
+
+# --- Tags -----------------------------------------------------------------
+
+def get_tags(db: Session) -> list[models.Tag]:
+    """Liste tous les tags, triés par nom."""
+    return list(db.scalars(select(models.Tag).order_by(models.Tag.name)).all())
+
+
+def get_tag_by_name(db: Session, name: str) -> models.Tag | None:
+    return db.scalar(select(models.Tag).where(models.Tag.name == name))
+
+
+def create_tag(db: Session, payload: schemas.TagCreate) -> models.Tag:
+    """Crée un tag. La couleur est attribuée automatiquement si absente."""
+    color = payload.color or _TAG_PALETTE[db.scalar(select(func.count(models.Tag.id))) % len(_TAG_PALETTE)]
+    tag = models.Tag(name=payload.name, color=color)
+    db.add(tag)
+    db.commit()
+    db.refresh(tag)
+    return tag
+
+
+def delete_tag(db: Session, tag_id: int) -> bool:
+    """Supprime un tag (et ses associations). `False` si introuvable."""
+    tag = db.get(models.Tag, tag_id)
+    if tag is None:
+        return False
+    db.delete(tag)
+    db.commit()
+    return True
+
+
+def _resolve_tags(db: Session, tag_ids: list[int]) -> list[models.Tag]:
+    """Renvoie les objets Tag correspondant aux ids fournis (ignore les inconnus)."""
+    if not tag_ids:
+        return []
+    stmt = select(models.Tag).where(models.Tag.id.in_(set(tag_ids)))
+    return list(db.scalars(stmt).all())
+
+
+# --- Todos ----------------------------------------------------------------
 
 def get_todos(db: Session, skip: int = 0, limit: int = 100) -> list[models.Todo]:
     """Liste les tâches, les plus récentes d'abord."""
@@ -28,8 +75,12 @@ def get_todo(db: Session, todo_id: int) -> models.Todo | None:
 
 
 def create_todo(db: Session, payload: schemas.TodoCreate) -> models.Todo:
-    """Crée une nouvelle tâche."""
-    todo = models.Todo(**payload.model_dump())
+    """Crée une nouvelle tâche, avec ses tags éventuels."""
+    todo = models.Todo(
+        title=payload.title,
+        description=payload.description,
+        tags=_resolve_tags(db, payload.tag_ids),
+    )
     db.add(todo)
     db.commit()
     db.refresh(todo)
@@ -45,7 +96,7 @@ def update_todo(
         return None
 
     # `exclude_unset=True` : on ne touche qu'aux champs explicitement envoyés.
-    data = payload.model_dump(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True, exclude={"tag_ids"})
     for field, value in data.items():
         setattr(todo, field, value)
 
@@ -55,10 +106,27 @@ def update_todo(
     if data.get("not_done"):
         todo.completed = False
 
+    # `tag_ids` fourni -> remplace l'ensemble des tags de la tâche.
+    if payload.tag_ids is not None:
+        todo.tags = _resolve_tags(db, payload.tag_ids)
+
     db.commit()
     db.refresh(todo)
     return todo
 
+
+def delete_todo(db: Session, todo_id: int) -> bool:
+    """Supprime une tâche. Renvoie `False` si elle n'existait pas."""
+    todo = get_todo(db, todo_id)
+    if todo is None:
+        return False
+
+    db.delete(todo)
+    db.commit()
+    return True
+
+
+# --- Statistiques -------------------------------------------------------
 
 def _status_expr():
     """Expression SQL renvoyant l'état textuel d'une tâche."""
@@ -70,11 +138,11 @@ def _status_expr():
 
 
 def get_stats(db: Session) -> dict:
-    """Agrège le nombre de tâches par jour de création et par état.
+    """Agrège les données du tableau de bord.
 
-    Retourne un dict compatible avec `schemas.TodoStats` :
     - `totals` : total par état
-    - `daily`  : une entrée par jour, triée par date croissante
+    - `daily`  : une entrée par jour de création, triée par date croissante
+    - `tags`   : nombre de tâches par tag
     """
     day_expr = func.date(models.Todo.created_at)
 
@@ -100,15 +168,23 @@ def get_stats(db: Session) -> dict:
     daily = [
         {"date": date_key, **counts} for date_key, counts in sorted(per_day.items())
     ]
-    return {"totals": totals, "daily": daily}
 
+    # Répartition par tag (inclut les tags à 0 tâche via un LEFT JOIN).
+    tag_stmt = (
+        select(
+            models.Tag.id,
+            models.Tag.name,
+            models.Tag.color,
+            func.count(models.todo_tags.c.todo_id).label("count"),
+        )
+        .select_from(models.Tag)
+        .outerjoin(models.todo_tags, models.todo_tags.c.tag_id == models.Tag.id)
+        .group_by(models.Tag.id)
+        .order_by(models.Tag.name)
+    )
+    tags = [
+        {"id": tid, "name": name, "color": color, "count": count}
+        for tid, name, color, count in db.execute(tag_stmt).all()
+    ]
 
-def delete_todo(db: Session, todo_id: int) -> bool:
-    """Supprime une tâche. Renvoie `False` si elle n'existait pas."""
-    todo = get_todo(db, todo_id)
-    if todo is None:
-        return False
-
-    db.delete(todo)
-    db.commit()
-    return True
+    return {"totals": totals, "daily": daily, "tags": tags}

@@ -6,6 +6,12 @@
  * http://localhost:8000), et non depuis le réseau interne Docker.
  */
 
+export interface Tag {
+  id: number;
+  name: string;
+  color: string; // "#rrggbb"
+}
+
 export interface Todo {
   id: number;
   title: string;
@@ -14,6 +20,7 @@ export interface Todo {
   /** Marquée explicitement comme non réalisée (exclusif avec `completed`). */
   not_done: boolean;
   created_at: string;
+  tags: Tag[];
 }
 
 /** État dérivé, pratique pour l'affichage. */
@@ -25,11 +32,17 @@ export function todoStatus(todo: Todo): TodoStatus {
   return "pending";
 }
 
-/** Libellé + couleur associés à chaque état (réutilisés partout : badges, graphes). */
-export const STATUS_META: Record<TodoStatus, { label: string; color: string }> = {
-  pending: { label: "En cours", color: "#64748b" }, // slate-500
-  done: { label: "Terminée", color: "#16a34a" }, // green-600
-  failed: { label: "Non réalisée", color: "#dc2626" }, // red-600
+/** Ordre d'affichage canonique des états. */
+export const STATUS_ORDER: TodoStatus[] = ["pending", "done", "failed"];
+
+/**
+ * Couleur associée à chaque état (source unique : badges + graphes).
+ * Les libellés sont traduits via `useI18n()` -> clé `status.<état>`.
+ */
+export const STATUS_COLOR: Record<TodoStatus, string> = {
+  pending: "#64748b", // slate-500
+  done: "#16a34a", // green-600
+  failed: "#dc2626", // red-600
 };
 
 /** Une entrée par jour renvoyée par GET /todos/stats. */
@@ -40,14 +53,23 @@ export interface DailyStat {
   failed: number;
 }
 
+export interface TagCount {
+  id: number;
+  name: string;
+  color: string;
+  count: number;
+}
+
 export interface TodoStatsResponse {
   totals: Record<TodoStatus, number>;
   daily: DailyStat[];
+  tags: TagCount[];
 }
 
 export interface TodoCreateInput {
   title: string;
   description?: string;
+  tag_ids?: number[];
 }
 
 export interface TodoUpdateInput {
@@ -55,6 +77,12 @@ export interface TodoUpdateInput {
   description?: string;
   completed?: boolean;
   not_done?: boolean;
+  tag_ids?: number[];
+}
+
+export interface TagCreateInput {
+  name: string;
+  color?: string;
 }
 
 const API_URL =
@@ -112,6 +140,28 @@ export const todoApi = {
   stats(): Promise<TodoStatsResponse> {
     return fetch(`${API_URL}/todos/stats`, { cache: "no-store" }).then((r) =>
       parse<TodoStatsResponse>(r),
+    );
+  },
+};
+
+export const tagApi = {
+  list(): Promise<Tag[]> {
+    return fetch(`${API_URL}/tags/`, { cache: "no-store" }).then((r) =>
+      parse<Tag[]>(r),
+    );
+  },
+
+  create(input: TagCreateInput): Promise<Tag> {
+    return fetch(`${API_URL}/tags/`, {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    }).then((r) => parse<Tag>(r));
+  },
+
+  remove(id: number): Promise<void> {
+    return fetch(`${API_URL}/tags/${id}`, { method: "DELETE" }).then((r) =>
+      parse<void>(r),
     );
   },
 };

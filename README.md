@@ -133,7 +133,27 @@ curl -X DELETE http://localhost:8000/todos/1
 
 ---
 
-## 7. Commandes utiles
+## 7. Tags
+
+- Onglet **Tags** (navbar) : créer / supprimer des tags (nom unique, couleur
+  auto depuis une palette).
+- Association many-to-many `todos <-> tags` (table `todo_tags`).
+  - À la création d'une tâche : cases à cocher dans le formulaire.
+  - Sur une tâche existante : bouton « Modifier les tags » (popover).
+- API : `GET/POST /tags/`, `DELETE /tags/{id}` ; les endpoints todo acceptent
+  `tag_ids` (POST) et le remplacent quand fourni (PUT).
+- Dashboard : camembert **Répartition par tag** (`GET /todos/stats` -> champ `tags`).
+
+## 8. Internationalisation (FR / EN)
+
+- Bascule via l'icône ⚙️ en bas de la navbar → menu **Langue** (🇫🇷 Français / 🇬🇧 English).
+- Choix mémorisé dans `localStorage` (`todo-app.lang`), défaut : français.
+- Implémentation légère sans dépendance : contexte React dans
+  `frontend/app/lib/i18n.tsx` (dictionnaires `fr` / `en`, hook `useI18n()` →
+  `{ lang, locale, setLang, t }`). Pour ajouter une chaîne : une entrée dans
+  chaque dictionnaire, puis `t("ma.cle")` dans le composant.
+
+## 9. Commandes utiles
 
 ```bash
 docker compose down             # Arrêter et supprimer les conteneurs
@@ -145,7 +165,7 @@ docker compose build --no-cache # Reconstruire sans cache
 
 ---
 
-## 8. Dépannage
+## 10. Dépannage
 
 | Symptôme                                   | Cause probable / solution                                          |
 |--------------------------------------------|-------------------------------------------------------------------|

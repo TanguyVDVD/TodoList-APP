@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { STATUS_META, type DailyStat } from "../lib/api";
+import { STATUS_COLOR, STATUS_ORDER, type DailyStat } from "../lib/api";
+import { useI18n } from "../lib/i18n";
 
 /** Formate "2026-09-02" -> "02/09". */
 const formatDay = (value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}`;
@@ -24,10 +25,12 @@ interface Props {
  * une couleur par état.
  */
 export default function TasksLineChart({ data }: Props) {
+  const { t } = useI18n();
+
   if (data.length === 0) {
     return (
       <p className="flex h-72 items-center justify-center text-sm text-slate-400">
-        Aucune tâche à afficher.
+        {t("dash.no_data")}
       </p>
     );
   }
@@ -45,16 +48,18 @@ export default function TasksLineChart({ data }: Props) {
           />
           <YAxis allowDecimals={false} fontSize={12} stroke="#94a3b8" />
           <Tooltip
-            labelFormatter={(label) => `Jour : ${formatDay(String(label))}`}
+            labelFormatter={(label) =>
+              t("chart.day_label", { date: formatDay(String(label)) })
+            }
           />
           <Legend />
-          {(["pending", "done", "failed"] as const).map((key) => (
+          {STATUS_ORDER.map((key) => (
             <Line
               key={key}
               type="monotone"
               dataKey={key}
-              name={STATUS_META[key].label}
-              stroke={STATUS_META[key].color}
+              name={t(`status.${key}`)}
+              stroke={STATUS_COLOR[key]}
               strokeWidth={2}
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}

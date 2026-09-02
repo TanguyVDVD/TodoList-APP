@@ -8,29 +8,30 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { STATUS_COLOR, STATUS_ORDER, type TodoStatus } from "../lib/api";
+import type { TagCount } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 
 interface Props {
-  totals: Record<TodoStatus, number>;
+  tags: TagCount[];
 }
 
-/** Camembert de la répartition des tâches par état. */
-export default function StatusPieChart({ totals }: Props) {
+/** Camembert de la répartition des tâches par tag. */
+export default function TagPieChart({ tags }: Props) {
   const { t } = useI18n();
 
-  const data = STATUS_ORDER.map((key) => ({
-    key,
-    name: t(`status.${key}`),
-    color: STATUS_COLOR[key],
-    value: totals[key] ?? 0,
-  }));
+  const data = tags
+    .filter((tag) => tag.count > 0)
+    .map((tag) => ({
+      key: tag.id,
+      name: tag.name,
+      color: tag.color,
+      value: tag.count,
+    }));
 
-  const isEmpty = data.every((slice) => slice.value === 0);
-  if (isEmpty) {
+  if (data.length === 0) {
     return (
       <p className="flex h-72 items-center justify-center text-sm text-slate-400">
-        {t("dash.no_data")}
+        {t("dash.no_tags")}
       </p>
     );
   }
